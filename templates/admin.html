@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Panel administrativo - Forte & Piano{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-3 col-xl-2 d-none d-lg-block px-0">
+            {% include "_admin-sidebar.html" %}
+        </div>
+        <div class="col-12 d-lg-none px-3 pt-3">
+            <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminOffcanvas">
+                <i class="bi bi-list"></i> Menu administrativo
+            </button>
+        </div>
+        <div class="col-lg-9 col-xl-10 p-4">
+            <h1 class="section-title">Panel principal</h1>
+            <p class="text-muted" id="bienvenidaAdmin"></p>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-4">
+                    <div class="card admin-summary-card p-4">
+                        <i class="bi bi-controller fs-2 text-accent"></i>
+                        <h3 class="h2 mt-2 mb-0" id="totalProductos">0</h3>
+                        <p class="text-muted mb-0">Catálogo registrados</p>
+                        <a href="{{ url_for('admin_productos') }}" class="stretched-link"></a>
+                    </div>
+                </div>
+                <div class="col-md-4" id="cardUsuarios">
+                    <div class="card admin-summary-card p-4">
+                        <i class="bi bi-people fs-2 text-accent"></i>
+                        <h3 class="h2 mt-2 mb-0" id="totalUsuarios">0</h3>
+                        <p class="text-muted mb-0">Usuarios registrados</p>
+                        <a href="{{ url_for('admin_usuarios') }}" class="stretched-link"></a>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card admin-summary-card p-4">
+                        <i class="bi bi-envelope fs-2 text-accent"></i>
+                        <h3 class="h2 mt-2 mb-0" id="totalMensajes">0</h3>
+                        <p class="text-muted mb-0">Mensajes de contacto</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mt-1">
+                <div class="col-md-6">
+                    <div class="card p-4">
+                        <h3 class="h5"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Stock critico</h3>
+                        <ul class="list-group list-group-flush" id="listaStockCritico"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% include "_admin-offcanvas.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/productos.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (!protegerPaginaAdmin([1, 2])) return;
+    ocultarUsuariosSiVendedor();
+
+    const sesion = obtenerSesion();
+    document.getElementById("bienvenidaAdmin").textContent = "Bienvenido, " + sesion.nombre + " (" + obtenerNombreRol(sesion.rolId) + ")";
+
+    const productos = obtenerColeccion(FORTEPIANO_KEYS.productos);
+    document.getElementById("totalProductos").textContent = productos.length;
+    document.getElementById("totalUsuarios").textContent = obtenerColeccion(FORTEPIANO_KEYS.usuarios).length;
+    document.getElementById("totalMensajes").textContent = obtenerColeccion(FORTEPIANO_KEYS.contactos).length;
+
+    if (sesion.rolId === 2) {
+        document.getElementById("cardUsuarios").style.display = "none";
+    }
+
+    const listaStockCritico = document.getElementById("listaStockCritico");
+    const criticos = productos.filter(function (p) { return p.stockCritico != null && p.stock <= p.stockCritico; });
+    if (criticos.length === 0) {
+        listaStockCritico.innerHTML = '<li class="list-group-item bg-transparent text-muted">Sin alertas de stock por el momento.</li>';
+    } else {
+        criticos.forEach(function (producto) {
+            listaStockCritico.innerHTML += '<li class="list-group-item bg-transparent d-flex justify-content-between"><span>' + producto.nombre + '</span><span class="stock-critico">Stock: ' + producto.stock + '</span></li>';
+        });
+    }
+});
+</script>
+{% endblock %}

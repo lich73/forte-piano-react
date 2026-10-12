@@ -1,0 +1,15 @@
+<div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="adminOffcanvas">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title">Menu administrativo</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <nav class="nav flex-column">
+            <a class="nav-link" href="{{ url_for('admin') }}"><i class="bi bi-speedometer2 me-2"></i>Panel principal</a>
+            <a class="nav-link" href="{{ url_for('admin_productos') }}"><i class="bi bi-controller me-2"></i>Catálogo</a>
+            <a class="nav-link" href="{{ url_for('admin_usuarios') }}" id="offcanvasUsuariosLink"><i class="bi bi-people me-2"></i>Usuarios</a>
+            <hr class="border-secondary">
+            <a class="nav-link" href="{{ url_for('home') }}"><i class="bi bi-box-arrow-left me-2"></i>Volver a la tienda</a>
+        </nav>
+    </div>
+</div>

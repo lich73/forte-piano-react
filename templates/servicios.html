@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Servicios - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5 my-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5 mb-3 forte-heading">Nuestros Servicios</h1>
+        <p class="text-muted fs-5">No solo vendemos instrumentos, también cuidamos de tu experiencia musical.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Servicio 1: Afinación -->
+        <div class="col-md-4">
+            <div class="card h-100 text-center p-4 card-forte-hover">
+                <div class="card-body">
+                    <i class="bi bi-tools display-4 text-accent mb-4 d-block"></i>
+                    <h3 class="h4 card-title mb-3">Afinación de Pianos</h3>
+                    <p class="card-text text-muted">Contamos con técnicos certificados para afinar, regular y mantener
+                        tu piano acústico en perfectas condiciones, directo en tu domicilio.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Servicio 2: Clases -->
+        <div class="col-md-4">
+            <div class="card h-100 text-center p-4 card-forte-hover">
+                <div class="card-body">
+                    <i class="bi bi-music-note-beamed display-4 text-accent mb-4 d-block"></i>
+                    <h3 class="h4 card-title mb-3">Clases de Piano</h3>
+                    <p class="card-text text-muted">Nuestra academia ofrece clases personalizadas para todos los
+                        niveles, guiadas por profesores profesionales y concertistas.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Servicio 3: Transporte -->
+        <div class="col-md-4">
+            <div class="card h-100 text-center p-4 card-forte-hover">
+                <div class="card-body">
+                    <i class="bi bi-truck display-4 text-accent mb-4 d-block"></i>
+                    <h3 class="h4 card-title mb-3">Transporte de Pianos</h3>
+                    <p class="card-text text-muted">Mover un piano es una tarea sumamente delicada. Ofrecemos servicio
+                        de mudanza especializada con seguro para proteger tu inversión.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

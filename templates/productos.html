@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Catálogo - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <h1 class="section-title">Catalogo de instrumentos musicales</h1>
+
+    <div class="row g-3 mb-4 bg-forte-panel p-3 rounded">
+        <div class="col-md-8">
+            <div class="input-group">
+                <span class="input-group-text bg-transparent text-muted"><i class="bi bi-search"></i></span>
+                <input type="text" id="buscadorProductos" class="form-control" placeholder="Buscar instrumento musical por nombre...">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select id="filtroCategoria" class="form-select"></select>
+        </div>
+    </div>
+
+    <div class="row g-4" id="catalogoContenedor"></div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/carrito.js') }}"></script>
+<script src="{{ url_for('static', filename='js/productos.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    llenarSelectCategorias("filtroCategoria", true);
+
+    function actualizarCatalogo() {
+        mostrarCatalogo("catalogoContenedor", document.getElementById("buscadorProductos").value, document.getElementById("filtroCategoria").value);
+    }
+
+    document.getElementById("buscadorProductos").addEventListener("input", actualizarCatalogo);
+    document.getElementById("filtroCategoria").addEventListener("change", actualizarCatalogo);
+
+    actualizarCatalogo();
+});
+</script>
+{% endblock %}

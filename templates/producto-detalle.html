@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Detalle del instrumento musical - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('productos') }}">Catálogo</a></li>
+            <li class="breadcrumb-item active">Detalle</li>
+        </ol>
+    </nav>
+    <div class="row g-4" id="detalleProducto"></div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/carrito.js') }}"></script>
+<script src="{{ url_for('static', filename='js/productos.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", mostrarDetalleProducto);
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Registro - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="auth-card p-4 p-md-5">
+                <h1 class="h3 mb-4 text-center">Crear cuenta en <span class="text-accent">Forte & Piano</span></h1>
+                <form id="formularioRegistro" novalidate>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="runRegistro" class="form-label">RUN (sin puntos ni guion)</label>
+                            <input type="text" class="form-control" id="runRegistro" placeholder="Ej: 123456785" maxlength="9">
+                            <div class="invalid-feedback">RUN invalido. Debe tener entre 7 y 9 caracteres.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="fechaNacimientoRegistro" class="form-label">Fecha de nacimiento</label>
+                            <input type="date" class="form-control" id="fechaNacimientoRegistro">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="nombreRegistro" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombreRegistro" maxlength="50">
+                            <div class="invalid-feedback">El nombre es obligatorio (maximo 50 caracteres).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="apellidosRegistro" class="form-label">Apellidos</label>
+                            <input type="text" class="form-control" id="apellidosRegistro" maxlength="100">
+                            <div class="invalid-feedback">Los apellidos son obligatorios (maximo 100 caracteres).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="correoRegistro" class="form-label">Correo</label>
+                            <input type="email" class="form-control" id="correoRegistro" maxlength="100" placeholder="usuario@gmail.com">
+                            <div class="invalid-feedback">Solo se aceptan correos @duoc.cl, @profesor.duoc.cl o @gmail.com.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="passwordRegistro" class="form-label">Contrasena</label>
+                            <input type="password" class="form-control" id="passwordRegistro" maxlength="10">
+                            <div class="invalid-feedback">La contrasena debe tener entre 4 y 10 caracteres.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="regionRegistro" class="form-label">Region</label>
+                            <select class="form-select" id="regionRegistro"></select>
+                            <div class="invalid-feedback">Selecciona una region.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="comunaRegistro" class="form-label">Comuna</label>
+                            <select class="form-select" id="comunaRegistro">
+                                <option value="">Seleccione una region primero</option>
+                            </select>
+                            <div class="invalid-feedback">Selecciona una comuna.</div>
+                        </div>
+                        <div class="col-12">
+                            <label for="direccionRegistro" class="form-label">Direccion</label>
+                            <input type="text" class="form-control" id="direccionRegistro" maxlength="300">
+                            <div class="invalid-feedback">La direccion es obligatoria (maximo 300 caracteres).</div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100 mt-4">Registrar</button>
+                    <p class="text-center mt-3 mb-0 small text-muted">
+                        Ya tienes cuenta? <a href="{{ url_for('login') }}" class="text-accent">Inicia sesion</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/usuarios.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", inicializarFormularioRegistro);
+</script>
+{% endblock %}

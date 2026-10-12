@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesion - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5 min-vh-70 d-flex align-items-center">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 col-lg-5">
+            <div class="auth-card p-4 p-md-5 text-center">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Forte & Piano" height="70" class="mb-3">
+                <h1 class="h3 mb-4">Iniciar sesion</h1>
+                <form id="formularioLogin" novalidate class="text-start">
+                    <div class="mb-3">
+                        <label for="correoLogin" class="form-label">Correo</label>
+                        <input type="email" class="form-control" id="correoLogin" maxlength="100" placeholder="usuario@gmail.com">
+                        <div class="invalid-feedback">Ingresa un correo valido (@duoc.cl, @profesor.duoc.cl o @gmail.com).</div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="passwordLogin" class="form-label">Contrasena</label>
+                        <input type="password" class="form-control" id="passwordLogin" maxlength="10">
+                        <div class="invalid-feedback">La contrasena debe tener entre 4 y 10 caracteres.</div>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">Iniciar sesion</button>
+                </form>
+                <p class="mt-4 mb-0 small text-muted">
+                    No tienes cuenta? <a href="{{ url_for('registro') }}" class="text-accent">Registrate aqui</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/usuarios.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", inicializarFormularioLogin);
+</script>
+{% endblock %}

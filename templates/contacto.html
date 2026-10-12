@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Contacto - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <h1 class="section-title">Contacto</h1>
+            <p class="mb-4">¿Tienes dudas o comentarios?</p>
+            <div class="auth-card p-4 p-md-5">
+                <form id="formularioContacto" novalidate>
+                    <div class="mb-3">
+                        <label for="nombreContacto" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombreContacto" maxlength="100">
+                        <div class="invalid-feedback">El nombre es obligatorio (máximo 100 caracteres).</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="correoContacto" class="form-label">Correo</label>
+                        <input type="email" class="form-control" id="correoContacto" maxlength="100"
+                            placeholder="usuario@gmail.com">
+                        <div class="invalid-feedback">Solo se aceptan correos @duoc.cl, @profesor.duoc.cl o @gmail.com.
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="comentarioContacto" class="form-label">Comentario</label>
+                        <textarea class="form-control" id="comentarioContacto" rows="5" maxlength="500"></textarea>
+                        <div class="invalid-feedback">El comentario es obligatorio (máximo 500 caracteres).</div>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">Enviar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/contacto.js') }}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", inicializarFormularioContacto);
+</script>
+{% endblock %}

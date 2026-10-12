@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Usuario - Administracion{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-3 col-xl-2 d-none d-lg-block px-0">
+            {% include "_admin-sidebar.html" %}
+        </div>
+        <div class="col-12 d-lg-none px-3 pt-3">
+            <button class="btn btn-outline-light" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminOffcanvas">
+                <i class="bi bi-list"></i> Menu administrativo
+            </button>
+        </div>
+        <div class="col-lg-9 col-xl-10 p-4">
+            <h1 class="section-title" id="tituloFormularioUsuario">Nuevo usuario</h1>
+
+            <form id="formularioUsuario" novalidate class="bg-forte-panel rounded p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="runUsuario" class="form-label">RUN (sin puntos ni guion)</label>
+                        <input type="text" class="form-control" id="runUsuario" placeholder="Ej: 123456785" maxlength="9">
+                        <div class="invalid-feedback">RUN invalido o ya registrado.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="nombreUsuario" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombreUsuario" maxlength="50">
+                        <div class="invalid-feedback">Obligatorio (maximo 50 caracteres).</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="apellidosUsuario" class="form-label">Apellidos</label>
+                        <input type="text" class="form-control" id="apellidosUsuario" maxlength="100">
+                        <div class="invalid-feedback">Obligatorio (maximo 100 caracteres).</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="correoUsuario" class="form-label">Correo</label>
+                        <input type="email" class="form-control" id="correoUsuario" maxlength="100">
+                        <div class="invalid-feedback">Solo @duoc.cl, @profesor.duoc.cl o @gmail.com.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="passwordUsuario" class="form-label">Contrasena</label>
+                        <input type="text" class="form-control" id="passwordUsuario" maxlength="10">
+                        <div class="invalid-feedback">Entre 4 y 10 caracteres.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="fechaNacimientoUsuario" class="form-label">Fecha de nacimiento</label>
+                        <input type="date" class="form-control" id="fechaNacimientoUsuario">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="rolUsuario" class="form-label">Tipo de usuario</label>
+                        <select class="form-select" id="rolUsuario"></select>
+                        <div class="invalid-feedback">Selecciona un tipo de usuario.</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="estadoUsuario" class="form-label">Estado</label>
+                        <select class="form-select" id="estadoUsuario">
+                            <option value="Activo">Activo</option>
+                            <option value="Inactivo">Inactivo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="regionUsuario" class="form-label">Region</label>
+                        <select class="form-select" id="regionUsuario"></select>
+                        <div class="invalid-feedback">Selecciona una region.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="comunaUsuario" class="form-label">Comuna</label>
+                        <select class="form-select" id="comunaUsuario">
+                            <option value="">Seleccione una region primero</option>
+                        </select>
+                        <div class="invalid-feedback">Selecciona una comuna.</div>
+                    </div>
+                    <div class="col-12">
+                        <label for="direccionUsuario" class="form-label">Direccion</label>
+                        <input type="text" class="form-control" id="direccionUsuario" maxlength="300">
+                        <div class="invalid-feedback">Obligatoria (maximo 300 caracteres).</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-4">
+                    <button type="submit" class="btn btn-accent">Guardar</button>
+                    <a href="{{ url_for('admin_usuarios') }}" class="btn btn-outline-light">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% include "_admin-offcanvas.html" %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/usuarios.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    if (!protegerPaginaAdmin([1])) return;
+    inicializarFormularioUsuarioAdmin();
+});
+</script>
+{% endblock %}

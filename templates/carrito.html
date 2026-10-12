@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Carrito - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <h1 class="section-title">Carrito de compras</h1>
+
+    <div id="carritoVacio" class="text-center py-5" style="display:none;">
+        <i class="bi bi-cart-x display-1 text-muted"></i>
+        <p class="text-muted mt-3">Tu carrito esta vacio.</p>
+        <a href="{{ url_for('productos') }}" class="btn btn-accent">Ver catalogo</a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div id="carritoContenedor"></div>
+        </div>
+        <div class="col-lg-4">
+            <div id="carritoResumen" class="bg-forte-panel rounded p-4" style="display:none;">
+                <h3 class="h5 mb-3">Resumen</h3>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>Total</span>
+                    <span class="fw-bold text-accent fs-4" id="carritoTotal">$0</span>
+                </div>
+                <button class="btn btn-accent w-100 mb-2" onclick="finalizarCompra()">Finalizar compra</button>
+                <button class="btn btn-outline-danger w-100" onclick="vaciarCarrito()">Vaciar carrito</button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/productos.js') }}"></script>
+<script src="{{ url_for('static', filename='js/carrito.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", renderizarCarrito);
+</script>
+{% endblock %}

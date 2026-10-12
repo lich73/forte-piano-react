@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}5 curiosidades sobre los pianos - Blog{% endblock %}
+
+{% block content %}
+<article class="container py-5" style="max-width: 800px;">
+    <!-- Imagen principal -->
+    <img src="{{ url_for('static', filename='img/blog/piano.webp') }}" class="img-fluid rounded mb-4 shadow"
+        alt="5 curiosidades sobre los pianos">
+    <p class="text-muted small mb-1">20 de agosto, 2026</p>
+    <h1 class="mb-4">5 curiosidades sobre los pianos</h1>
+    <p>
+        El piano es conocido como el <strong>rey de los instrumentos musicales</strong>, y no es para menos. Su amplio
+        registro y su capacidad para tocar melodía y acompañamiento al mismo tiempo lo hacen único. Pero, ¿conoces todos
+        sus secretos?
+    </p>
+    <p>
+        Aquí te compartimos algunos datos interesantes que quizás no sabías:
+    </p>
+    <ul>
+        <li><strong>Miles de piezas:</strong> Un piano acústico promedio tiene más de 12.000 piezas individuales, de las
+            cuales 10.000 son móviles. ¡Una verdadera obra de ingeniería!</li>
+        <li><strong>Tensión extrema:</strong> Las cuerdas de un piano de cola están sometidas a una tensión combinada de
+            unas 30 toneladas.</li>
+        <li><strong>El piano más grande:</strong> El piano más grande del mundo fue construido por un joven de 15 años
+            en Nueva Zelanda. Mide más de 5,7 metros de largo.</li>
+        <li><strong>Su verdadero nombre:</strong> Originalmente, Bartolomeo Cristofori lo llamó "gravicembalo col piano
+            e forte", que significa clavecín con (sonido) suave y fuerte.</li>
+        <li><strong>Material de las teclas:</strong> Aunque solían hacerse de marfil, hoy en día las teclas blancas se
+            fabrican con plásticos especiales para proteger a los elefantes.</li>
+    </ul>
+
+    <!-- Imagen de apoyo -->
+    <div class="text-center my-5">
+        <img src="{{ url_for('static', filename='img/blog/banner.jpg') }}" class="img-fluid rounded shadow-sm"
+            style="max-height: 400px; object-fit: cover; width: 100%;" alt="Curiosidades del piano">
+        <p class="text-muted small mt-2">Explora el fascinante mundo del piano.</p>
+    </div>
+
+    <p>
+        Esperamos que estas curiosidades te hayan resultado interesantes. ¡Sigue explorando nuestra tienda para
+        encontrar el piano perfecto para ti!
+    </p>
+
+    <a href="{{ url_for('blog') }}" class="btn btn-accent mt-3"><i class="bi bi-arrow-left"></i> Volver al Blog</a>
+</article>
+{% endblock %}

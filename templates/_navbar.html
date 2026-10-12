@@ -1,0 +1,54 @@
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark forte-navbar sticky-top">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('home') }}">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Forte & Piano" height="38">
+            </a>
+            <a class="navbar-brand d-flex gap-2 brand-text" href="{{ url_for('home') }}">
+                Forte & Piano
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu"
+                aria-controls="navMenu" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('home') }}">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('productos') }}">Catálogo</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('servicios') }}">Servicios</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('blog') }}">Blog</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('nosotros') }}">Nosotros</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('contacto') }}">Contacto</a></li>
+                    <li class="nav-item" id="navAdminItem" style="display:none;"><a class="nav-link"
+                            href="{{ url_for('admin') }}"><i class="bi bi-speedometer2"></i> Administración</a></li>
+                </ul>
+                <ul class="navbar-nav align-items-lg-center gap-lg-3">
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{{ url_for('carrito') }}" title="Carrito">
+                            <i class="bi bi-cart3 fs-5"></i>
+                            <span id="carritoBadge"
+                                class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle mt-1"
+                                style="display:none; font-size: 0.70rem;">0</span>
+                        </a>
+                    </li>
+                    <li class="nav-item" id="navInvitado">
+                        <div class="d-flex align-items-center gap-2">
+                            <a class="btn btn-outline-light btn-sm" href="{{ url_for('login') }}">Iniciar sesión</a>
+                            <a class="btn btn-accent btn-sm" href="{{ url_for('registro') }}">Registrarse</a>
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown" id="navUsuario" style="display:none;">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            <i class="bi bi-person-circle fs-5"></i> <span id="navUsuarioNombre"></span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#" id="btnCerrarSesion"><i
+                                        class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>

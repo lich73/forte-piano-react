@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Blog musical - Forte & Piano{% endblock %}
+
+{% block content %}
+<section class="container py-5">
+    <!-- PASO 1: Agregamos un banner llamativo en la parte superior del blog -->
+    <div class="mb-5 position-relative">
+        <img src="{{ url_for('static', filename='img/blog/banner.jpg') }}" class="img-fluid rounded w-100 shadow-lg" alt="Banner del blog" style="height: 350px; object-fit: cover;">
+        <div class="position-absolute bottom-0 start-0 w-100 p-4 rounded-bottom" style="background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);">
+            <h2 class="text-white mb-0" style="font-weight: 700;">Novedades y Noticias</h2>
+        </div>
+    </div>
+
+    <h1 class="section-title">Blog musical</h1>
+    <p class="text-muted mb-4">Novedades, lanzamientos y curiosidades del mundo de los instrumentos musicales.</p>
+    <div class="row g-4" id="blogContenedor"></div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/blog.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    mostrarNoticias("blogContenedor", null);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Cuidando tu piano acústico - Blog{% endblock %}
+
+{% block content %}
+<article class="container py-5" style="max-width: 800px;">
+    <!-- Imagen principal -->
+    <img src="{{ url_for('static', filename='img/blog/banner.jpg') }}" class="img-fluid rounded mb-4 shadow"
+        alt="Cuidando tu piano acústico">
+    <p class="text-muted small mb-1">10 de agosto, 2026</p>
+    <h1 class="mb-4">Cuidando tu piano acústico</h1>
+
+    <p>
+        Un piano acústico no es solo un instrumento musical; es una obra de arte y una máquina compleja compuesta por
+        miles de piezas de madera, metal y fieltro. Para que mantenga su sonido y funcionamiento impecable durante
+        generaciones, requiere de un cuidado continuo y consciente.
+    </p>
+
+    <h3 class="h5 mt-4">1. Control de Humedad</h3>
+    <p>
+        La madera de tu piano está viva. Los cambios bruscos de humedad son su peor enemigo, ya que pueden hacer que las
+        piezas se expandan o se contraigan, lo que afecta directamente a la afinación, a la mecánica e incluso puede
+        generar grietas en la tabla armónica. Lo ideal es mantener una humedad relativa constante de entre un 40% y un
+        50% en la habitación.
+    </p>
+
+    <h3 class="h5 mt-4">2. Temperatura Constante</h3>
+    <p>
+        Al igual que con la humedad, la estabilidad térmica es clave. Evita colocar tu piano cerca de ventanas por donde
+        entre la luz solar directa, calefactores, estufas o corrientes de aire acondicionado. Una temperatura ambiente
+        estable alrededor de los 20°C a 22°C es perfecta para preservar la integridad de los materiales y del clavijero.
+    </p>
+
+    <h3 class="h5 mt-4">3. Afinación y Mantenimiento Regular</h3>
+    <p>
+        Incluso si el piano no se toca con frecuencia, la tensión extrema a la que están sometidas las cuerdas (que suma
+        varias toneladas) hará que se desafine de forma natural por el paso del tiempo y los cambios estacionales.
+        Recomendamos llamar a un técnico afinador profesional al menos dos veces al año para asegurar que siempre suene
+        en su máximo esplendor.
+    </p>
+
+    <p class="mt-4">
+        Con estos consejos fundamentales, podrás garantizar que tu piano se mantenga en perfectas condiciones y siga
+        ofreciendo su mejor sonido por muchos años más.
+    </p>
+
+    <a href="{{ url_for('blog') }}" class="btn btn-accent mt-3"><i class="bi bi-arrow-left"></i> Volver al Blog</a>
+</article>
+{% endblock %}
