@@ -25,6 +25,12 @@ module.exports = (config) => {
         type: 'module',
         watched: false,
         served: false
+      },
+      {
+        pattern: 'src/**/*.spec.tsx',
+        type: 'module',
+        watched: false,
+        served: false
       }
     ],
     browsers: ['ChromeHeadless'],

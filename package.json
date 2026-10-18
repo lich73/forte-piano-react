@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "karma start karma.conf.cjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "karma start karma.conf.cjs"
   },
   "dependencies": {
     "bootstrap": "^5.3.3",

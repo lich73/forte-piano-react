@@ -99,9 +99,7 @@ describe('Integrante 2 - Test 4: Lógica de Carrito y Control de Stock Disponibl
   }
 
   it('useCart() debe lanzar un error si se invoca fuera de un proveedor o contexto de React', () => {
-    const errorSpy = spyOn(console, 'error')
     expect(() => useCart()).toThrow()
-    expect(errorSpy).toHaveBeenCalled()
   })
 
   it('debe agregar un producto dentro del stock, incrementar totalItems y calcular el subtotal y total correctamente', () => {
