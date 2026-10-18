@@ -1,13 +1,14 @@
 import { Link, NavLink } from 'react-router-dom'
-import { Navbar as BsNavbar, Nav, Container } from 'react-bootstrap'
+import { Navbar as BsNavbar, Nav, Container, NavDropdown } from 'react-bootstrap'
+import { useAuth } from '../../context/AuthContext'
 
 interface NavbarProps {
   totalCarrito?: number
-  sesion?: { nombre: string; rolId: number } | null
-  onCerrarSesion?: () => void
 }
 
-export function Navbar({ totalCarrito = 0, sesion = null, onCerrarSesion }: NavbarProps) {
+export function Navbar({ totalCarrito = 0 }: NavbarProps) {
+  const { sesion, logout } = useAuth()
+
   return (
     <header>
       <BsNavbar expand="lg" variant="dark" className="forte-navbar sticky-top">
@@ -42,7 +43,7 @@ export function Navbar({ totalCarrito = 0, sesion = null, onCerrarSesion }: Navb
                 Contacto
               </NavLink>
               {sesion && (sesion.rolId === 1 || sesion.rolId === 2) && (
-                <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <NavLink to="/admin" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`} id="navAdminItem">
                   <i className="bi bi-speedometer2 me-1"></i> Administración
                 </NavLink>
               )}
@@ -76,25 +77,26 @@ export function Navbar({ totalCarrito = 0, sesion = null, onCerrarSesion }: Navb
                   </div>
                 </Nav.Item>
               ) : (
-                <Nav.Item className="dropdown" id="navUsuario">
-                  <span className="nav-link dropdown-toggle text-light" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i className="bi bi-person-circle fs-5 me-1"></i>
-                    <span>{sesion.nombre}</span>
-                  </span>
-                  <ul className="dropdown-menu dropdown-menu-end dropdown-menu-dark">
-                    <li>
-                      <button
-                        className="dropdown-item text-danger"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          onCerrarSesion?.()
-                        }}
-                      >
-                        <i className="bi bi-box-arrow-right me-2"></i> Cerrar sesión
-                      </button>
-                    </li>
-                  </ul>
-                </Nav.Item>
+                <NavDropdown
+                  id="navUsuario"
+                  title={
+                    <>
+                      <i className="bi bi-person-circle fs-5 me-1"></i>
+                      <span id="navUsuarioNombre">{sesion.nombre}</span>
+                    </>
+                  }
+                  align="end"
+                  menuVariant="dark"
+                >
+                  <NavDropdown.Item
+                    as="button"
+                    className="text-danger"
+                    id="btnCerrarSesion"
+                    onClick={() => logout()}
+                  >
+                    <i className="bi bi-box-arrow-right me-2"></i> Cerrar sesión
+                  </NavDropdown.Item>
+                </NavDropdown>
               )}
             </Nav>
           </BsNavbar.Collapse>
@@ -103,4 +105,5 @@ export function Navbar({ totalCarrito = 0, sesion = null, onCerrarSesion }: Navb
     </header>
   )
 }
+
 export default Navbar

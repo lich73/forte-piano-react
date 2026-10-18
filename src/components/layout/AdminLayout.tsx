@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { AdminSidebar } from './AdminSidebar'
 import { AdminOffcanvas } from './AdminOffcanvas'
+import { useAuth } from '../../context/AuthContext'
 
-interface AdminLayoutProps {
-  rolId?: number
-}
-
-export function AdminLayout({ rolId = 1 }: AdminLayoutProps) {
+export function AdminLayout() {
   const [showOffcanvas, setShowOffcanvas] = useState(false)
+  const { sesion } = useAuth()
+  const rolId = sesion?.rolId ?? 1
 
   return (
     <div className="container-fluid">
@@ -37,4 +36,5 @@ export function AdminLayout({ rolId = 1 }: AdminLayoutProps) {
     </div>
   )
 }
+
 export default AdminLayout
