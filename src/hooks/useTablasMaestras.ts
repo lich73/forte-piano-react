@@ -22,6 +22,16 @@ export function useTablasMaestras() {
     return rol ? rol.nombre : ''
   }
 
+  const obtenerNombreRegion = (regionId: number | string): string => {
+    const region = regiones.find((r) => r.id === Number(regionId))
+    return region ? region.nombre : '-'
+  }
+
+  const obtenerNombreComuna = (comunaId: number | string): string => {
+    const comuna = comunas.find((c) => c.id === Number(comunaId))
+    return comuna ? comuna.nombre : '-'
+  }
+
   const obtenerComunasPorRegion = (regionId: number | string): Comuna[] => {
     return comunas.filter((c) => c.regionId === Number(regionId))
   }
@@ -33,6 +43,8 @@ export function useTablasMaestras() {
     roles,
     obtenerNombreCategoria,
     obtenerNombreRol,
+    obtenerNombreRegion,
+    obtenerNombreComuna,
     obtenerComunasPorRegion
   }
 }
