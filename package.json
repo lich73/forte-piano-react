@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "karma start karma.conf.cjs"
   },
   "dependencies": {
     "bootstrap": "^5.3.3",
@@ -18,10 +19,16 @@
     "sweetalert2": "^11.14.0"
   },
   "devDependencies": {
+    "@types/jasmine": "^7.0.0",
     "@types/node": "^22.5.0",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "jasmine-core": "^7.0.2",
+    "karma": "^6.4.4",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-jasmine": "^5.1.0",
+    "karma-vite": "^1.0.5",
     "typescript": "^5.5.4",
     "vite": "^5.4.2"
   }
