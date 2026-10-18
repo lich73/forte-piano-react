@@ -20,6 +20,8 @@ export function AdminLayout() {
             className="btn btn-outline-light"
             type="button"
             onClick={() => setShowOffcanvas(true)}
+            aria-controls="adminOffcanvas"
+            aria-label="Abrir menú administrativo"
           >
             <i className="bi bi-list me-1"></i> Menú administrativo
           </button>

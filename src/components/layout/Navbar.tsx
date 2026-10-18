@@ -14,7 +14,7 @@ export function Navbar({ totalCarrito }: NavbarProps) {
 
   return (
     <header>
-      <BsNavbar expand="lg" variant="dark" className="forte-navbar sticky-top">
+      <BsNavbar expand="lg" variant="dark" data-bs-theme="dark" className="forte-navbar sticky-top">
         <Container>
           <Link to="/" className="navbar-brand d-flex align-items-center gap-2">
             <img src="/img/logo.png" alt="Logo Forte & Piano" height="38" />
