@@ -43,4 +43,12 @@ export function confirmarAccion(
   })
 }
 
+export function confirmarEliminar(
+  titulo = '¿Eliminar producto?',
+  texto = 'Se quitará del carrito de compras.'
+): Promise<SweetAlertResult> {
+  return confirmarAccion(titulo, texto, 'Eliminar', 'Cancelar')
+}
+
 export default Swal
+

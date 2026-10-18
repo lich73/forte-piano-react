@@ -1,13 +1,16 @@
 import { Link, NavLink } from 'react-router-dom'
 import { Navbar as BsNavbar, Nav, Container, NavDropdown } from 'react-bootstrap'
 import { useAuth } from '../../context/AuthContext'
+import { useCart } from '../../context/CartContext'
 
 interface NavbarProps {
   totalCarrito?: number
 }
 
-export function Navbar({ totalCarrito = 0 }: NavbarProps) {
+export function Navbar({ totalCarrito }: NavbarProps) {
   const { sesion, logout } = useAuth()
+  const { totalItems } = useCart()
+  const cantidadBadge = totalCarrito !== undefined ? totalCarrito : totalItems
 
   return (
     <header>
@@ -53,13 +56,13 @@ export function Navbar({ totalCarrito = 0 }: NavbarProps) {
               <Nav.Item>
                 <Link to="/carrito" className="nav-link position-relative" title="Carrito">
                   <i className="bi bi-cart3 fs-5"></i>
-                  {totalCarrito > 0 && (
+                  {cantidadBadge > 0 && (
                     <span
                       id="carritoBadge"
                       className="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle mt-1"
                       style={{ fontSize: '0.70rem' }}
                     >
-                      {totalCarrito}
+                      {cantidadBadge}
                     </span>
                   )}
                 </Link>
