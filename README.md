@@ -128,22 +128,3 @@ npm run preview
 | **Vendedor** (Rol 2) | `vendedor@gmail.com` | `vend1234` | Acceso a `/admin` (Dashboard y consulta de Catálogo en solo lectura). |
 | **Cliente** (Rol 3) | `camila@gmail.com` | `cliente1` | Navegación en tienda pública, carrito de compras y catálogo. |
 | **Cliente** (Rol 3) | `diego@duoc.cl` | `diego123` | Navegación en tienda pública, carrito de compras y catálogo. |
-
----
-
-## ✅ Cumplimiento del Checklist de Verificación (Anexo C)
-
-- [x] **Home**: Carrusel avanza y botones llevan a las rutas correctas; se muestran 4 destacados y 3 noticias.
-- [x] **Catálogo**: Buscador en vivo por texto y selector de categoría en tiempo real; botón deshabilitado si está sin stock.
-- [x] **Detalle**: Cantidad no supera el stock disponible; agregar respeta cantidades previas en carrito.
-- [x] **Carrito**: Botones `+` / `-` y eliminar recalculan subtotal y total; badge del navbar sincronizado; vaciar y finalizar compra piden confirmación.
-- [x] **Registro**: Valida RUN con algoritmo módulo 11, correo institucional/gmail permitido, contraseña (4-10 caracteres), región → comuna dependiente, rechaza RUN duplicado.
-- [x] **Login**: Credenciales inválidas muestran error; cuenta inactiva se bloquea; redirige a `/admin` si el rol es Administrador/Vendedor y a `/` si es Cliente.
-- [x] **Navbar**: Alterna entre "Iniciar sesión/Registrarse" y el menú de usuario según sesión; "Administración" exclusivo para Administrador y Vendedor.
-- [x] **Contacto**: Valida campos, almacena mensaje en `localStorage` y limpia el formulario.
-- [x] **Admin Dashboard**: Contadores correctos, lista de stock crítico filtrada, tarjeta usuarios oculta para vendedor.
-- [x] **Admin Productos**: Tabla busca, ordena y pagina mediante componente React `<DataTable>`; vendedor en solo lectura; CRUD funcional.
-- [x] **Admin Usuarios**: Solo accesible por Administrador; CRUD funcional.
-- [x] **Formularios Admin**: Validaciones idénticas al registro; detección de código/RUN duplicado y aviso de stock crítico.
-- [x] **Rutas Protegidas**: Intentar ingresar a `/admin/*` sin sesión o sin permiso dispara alerta y redirige a `/login`.
-- [x] **Persistencia**: Recargar en cualquier página conserva sesión activa y carrito en `localStorage`.
