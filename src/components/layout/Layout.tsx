@@ -4,14 +4,12 @@ import { Footer } from './Footer'
 
 interface LayoutProps {
   totalCarrito?: number
-  sesion?: { nombre: string; rolId: number } | null
-  onCerrarSesion?: () => void
 }
 
-export function Layout({ totalCarrito, sesion, onCerrarSesion }: LayoutProps) {
+export function Layout({ totalCarrito }: LayoutProps) {
   return (
     <>
-      <Navbar totalCarrito={totalCarrito} sesion={sesion} onCerrarSesion={onCerrarSesion} />
+      <Navbar totalCarrito={totalCarrito} />
       <main>
         <Outlet />
       </main>
@@ -19,4 +17,5 @@ export function Layout({ totalCarrito, sesion, onCerrarSesion }: LayoutProps) {
     </>
   )
 }
+
 export default Layout
