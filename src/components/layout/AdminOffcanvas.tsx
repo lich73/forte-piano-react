@@ -9,7 +9,14 @@ interface AdminOffcanvasProps {
 
 export function AdminOffcanvas({ show, onHide, rolId = 1 }: AdminOffcanvasProps) {
   return (
-    <Offcanvas show={show} onHide={onHide} className="text-bg-dark" id="adminOffcanvas">
+    <Offcanvas
+      show={show}
+      onHide={onHide}
+      placement="start"
+      data-bs-theme="dark"
+      className="text-bg-dark"
+      id="adminOffcanvas"
+    >
       <Offcanvas.Header closeButton closeVariant="white">
         <Offcanvas.Title>Menú administrativo</Offcanvas.Title>
       </Offcanvas.Header>
