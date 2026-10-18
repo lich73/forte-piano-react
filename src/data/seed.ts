@@ -185,7 +185,12 @@ export const NOTICIAS_INICIALES: Noticia[] = [
     resumen: 'Nace una nueva tienda online pensada por y para los pianistas y músicos de Chile.',
     imagen: 'blog/apertura.jpg',
     fecha: '2026-08-01',
-    slug: 'detalle-1'
+    slug: 'detalle-1',
+    contenido: [
+      'Después de meses de trabajo, hoy nace Forte & Piano, una nueva tienda online pensada por y para la comunidad musical. Nuestro objetivo es simple: ofrecer un catálogo variado de instrumentos musicales, con una experiencia de compra rápida, clara y sin complicaciones.',
+      'Desde el primer día contarás con un catálogo organizado por categorías, fichas de producto con toda la información que necesitas, y un carrito de compras que recuerda tus productos aunque cierres el navegador.',
+      'Este es solo el comienzo. En las próximas semanas seguiremos sumando títulos, promociones y contenido para toda la comunidad. Gracias por ser parte de este lanzamiento.'
+    ]
   },
   {
     id: 2,
@@ -193,7 +198,14 @@ export const NOTICIAS_INICIALES: Noticia[] = [
     resumen: 'Consejos clave sobre humedad, temperatura y afinación para mantener tu piano en perfecto estado.',
     imagen: 'blog/banner.jpg',
     fecha: '2026-08-10',
-    slug: 'detalle-2'
+    slug: 'detalle-2',
+    contenido: [
+      'Un piano acústico no es solo un instrumento musical; es una obra de arte y una máquina compleja compuesta por miles de piezas de madera, metal y fieltro. Para que mantenga su sonido y funcionamiento impecable durante generaciones, requiere de un cuidado continuo y consciente.',
+      '1. Control de Humedad: La madera de tu piano está viva. Los cambios bruscos de humedad son su peor enemigo, ya que pueden hacer que las piezas se expandan o se contraigan, lo que afecta directamente a la afinación, a la mecánica e incluso puede generar grietas en la tabla armónica. Lo ideal es mantener una humedad relativa constante de entre un 40% y un 50% en la habitación.',
+      '2. Temperatura Constante: Al igual que con la humedad, la estabilidad térmica es clave. Evita colocar tu piano cerca de ventanas por donde entre la luz solar directa, calefactores, estufas o corrientes de aire acondicionado. Una temperatura ambiente estable alrededor de los 20°C a 22°C es perfecta para preservar la integridad de los materiales y del clavijero.',
+      '3. Afinación y Mantenimiento Regular: Incluso si el piano no se toca con frecuencia, la tensión extrema a la que están sometidas las cuerdas (que suma varias toneladas) hará que se desafine de forma natural por el paso del tiempo y los cambios estacionales. Recomendamos llamar a un técnico afinador profesional al menos dos veces al año para asegurar que siempre suene en su máximo esplendor.',
+      'Con estos consejos fundamentales, podrás garantizar que tu piano se mantenga en perfectas condiciones y siga ofreciendo su mejor sonido por muchos años más.'
+    ]
   },
   {
     id: 3,
@@ -201,7 +213,16 @@ export const NOTICIAS_INICIALES: Noticia[] = [
     resumen: 'Datos interesantes que quizás no conocías sobre el rey de los instrumentos musicales.',
     imagen: 'blog/piano.webp',
     fecha: '2026-08-20',
-    slug: 'detalle-3'
+    slug: 'detalle-3',
+    contenido: [
+      'El piano es conocido como el rey de los instrumentos musicales, y no es para menos. Su amplio registro y su capacidad para tocar melodía y acompañamiento al mismo tiempo lo hacen único. Pero, ¿conoces todos sus secretos?',
+      'Miles de piezas: Un piano acústico promedio tiene más de 12.000 piezas individuales, de las cuales 10.000 son móviles. ¡Una verdadera obra de ingeniería!',
+      'Tensión extrema: Las cuerdas de un piano de cola están sometidas a una tensión combinada de unas 30 toneladas.',
+      'El piano más grande: El piano más grande del mundo fue construido por un joven de 15 años en Nueva Zelanda. Mide más de 5,7 metros de largo.',
+      'Su verdadero nombre: Originalmente, Bartolomeo Cristofori lo llamó "gravicembalo col piano e forte", que significa clavecín con (sonido) suave y fuerte.',
+      'Material de las teclas: Aunque solían hacerse de marfil, hoy en día las teclas blancas se fabrican con plásticos especiales para proteger a los elefantes.',
+      'Esperamos que estas curiosidades te hayan resultado interesantes. ¡Sigue explorando nuestra tienda para encontrar el piano perfecto para ti!'
+    ]
   }
 ]
 
