@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { CartProvider } from './context/CartContext'
 import { Layout } from './components/layout/Layout'
 import { AdminLayout } from './components/layout/AdminLayout'
 import { RutaProtegida } from './components/common/RutaProtegida'
@@ -25,7 +26,8 @@ import AdminUsuarioForm from './pages/admin/AdminUsuarioForm'
 export function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <CartProvider>
+        <BrowserRouter>
         <Routes>
           {/* Rutas de la tienda pública con Layout (Navbar + Outlet + Footer) */}
           <Route element={<Layout />}>
@@ -61,6 +63,7 @@ export function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   )
 }
