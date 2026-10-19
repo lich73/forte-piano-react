@@ -24,17 +24,17 @@ Cada bloque incluye:
 
 ### 🎙️ Lo que debe decir el Integrante 1 (Texto para leer/locutar):
 
-> *"¡Hola a todos y profesor! Mi nombre es [Tu Nombre] y hoy les presentamos la migración de nuestra tienda de instrumentos musicales, **Forte & Piano**, desde una aplicación original en Flask y Jinja hacia una aplicación moderna en **React, TypeScript y Vite**, estilizada con **React-Bootstrap**.*
+> *"Estimado profesor y compañeros, un cordial saludo. Mi nombre es Patricio y hoy les presentamos la migración de nuestra tienda de instrumentos musicales, **Forte & Piano**, desde una arquitectura monolítica basada en Flask hacia una **Single Page Application** moderna desarrollada con **React, TypeScript y Vite**, estilizada mediante componentes de **React-Bootstrap**.*
 >
-> *Para comenzar con el proyecto, me correspondió liderar la **Fase 0 (Base técnica)**, la **Fase 1 (Esqueleto de navegación)** y la **Fase 5 (Autenticación y seguridad)**.*
+> *En este proyecto, estuve a cargo de la **configuración del entorno base**, la **arquitectura de navegación** y el **subsistema de autenticación y control de acceso**.*
 >
-> *En la base técnica, configuré el entorno en Vite con TypeScript estricto, migrando los assets visuales y los estilos globales. Luego, en el esqueleto de navegación, implementé la arquitectura de doble layout: por un lado, el **Layout público** con el Navbar y Footer; y por otro, el **AdminLayout** con el menú lateral Sidebar y menú Offcanvas para dispositivos móviles.*
+> *En la base técnica, configuré el tooling con Vite y TypeScript en modo estricto para asegurar un desarrollo con tipado seguro (*type-safety*), migrando los assets estáticos y estilos globales. Para la navegación, diseñé una arquitectura de doble layout desacoplado: por un lado, el **Layout Público**, compuesto por un Navbar reactivo y Footer; y por otro, el **AdminLayout**, que integra una barra lateral fija en escritorio y un menú Offcanvas responsivo optimizado para dispositivos móviles.*
 >
-> *En la autenticación, creé el `AuthContext` para centralizar la sesión activa con persistencia en `localStorage`. Desarrollé la pantalla de **Login**, que valida el formato y redirige de forma inteligente según el rol del usuario (los administradores y vendedores van al panel `/admin`, mientras que los clientes van a la tienda). También construí la pantalla de **Registro**, donde implementé la carga dinámica de comunas según la región seleccionada y la validación de RUN único. Para proteger las secciones administrativas, creé el componente `<RutaProtegida>`, que bloquea a usuarios no autorizados disparando una alerta de SweetAlert2.*
+> *En el área de seguridad, implementé el `AuthContext` utilizando la Context API para centralizar el estado global de la sesión con persistencia en `localStorage`. Desarrollé la vista de **Login**, que aplica control de acceso basado en roles (**RBAC**): redirige automáticamente a administradores y vendedores al panel `/admin`, y a los clientes a la tienda pública. En la vista de **Registro**, implementé la carga reactiva de comunas sujeta a la región seleccionada y la validación de unicidad de RUN. Además, para proteger las rutas privadas, construí el componente guard `<RutaProtegida>`, que intercepta accesos no autorizados y emite notificaciones modales con SweetAlert2.*
 >
-> *Respecto a mis **pruebas unitarias con Karma y Jasmine**, desarrollé dos suites principales:*
-> 1. *El test de validaciones (`validaciones.spec.ts`), donde comprobé que la función `validarRun()` verifique correctamente el dígito verificador chileno con algoritmo módulo 11, y que el filtro de correos solo acepte dominios autorizados como `@duoc.cl` o `@gmail.com`.*
-> 2. *El test de autenticación (`auth-context.spec.ts`), donde validé que un usuario con credenciales correctas guarde su sesión activa, y que cuentas inactivas o con claves erróneas sean rechazadas.*
+> *En cuanto al aseguramiento de calidad con **Karma y Jasmine**, diseñé dos suites de pruebas unitarias:*
+> 1. *`validaciones.spec.ts`: donde verifiqué mediante pruebas paramétricas la función `validarRun()`, que calcula el dígito verificador chileno con el algoritmo Módulo 11, junto con el filtrado estricto de correos restringido a dominios autorizados como `@duoc.cl` o `@gmail.com`.*
+> 2. *`auth-context.spec.ts`: donde validé el ciclo de vida de la sesión, comprobando la persistencia de credenciales válidas y el rechazo inmediato de claves incorrectas o cuentas inactivas.*
 >
 > *A continuación, mi compañero les explicará cómo resolvimos la capa de datos reactiva, el catálogo de productos y el carrito de compras."*
 
