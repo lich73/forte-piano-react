@@ -24,9 +24,9 @@ El proyecto ha sido completamente migrado desde su versión original (Flask + Ji
 
 | Integrante | Rol Principal | Fases Asignadas | Enfoque |
 |---|---|---|---|
-| **Integrante 1** | Arquitectura & Seguridad | **Fase 0, Fase 1, Fase 5** | Configuración base, shell/layout público y privado, routing inicial, autenticación y rutas protegidas. |
-| **Integrante 2** | Estado Global & E-Commerce | **Fase 2, Fase 4, Fase 7** | Modelos tipados, contextos (Auth/Cart), hooks de datos, catálogo, detalle de producto, carrito y pulido con React-Bootstrap. |
-| **Integrante 3** | Contenidos, Backoffice & QA | **Fase 3, Fase 6, Fase 8, Fase 9** | Páginas informativas (Nosotros, Servicios, Blog, Contacto), panel administrativo completo (Dashboard, CRUDs, DataTable genérico) y verificación final. |
+| **Patricio Cespedes** | Arquitectura & Seguridad | **Fase 0, Fase 1, Fase 5** | Configuración base, shell/layout público y privado, routing inicial, autenticación y rutas protegidas. |
+| **Daniel Aedo** | Estado Global & E-Commerce | **Fase 2, Fase 4, Fase 7** | Modelos tipados, contextos (Auth/Cart), hooks de datos, catálogo, detalle de producto, carrito y pulido con React-Bootstrap. |
+| **Angelo Ponce** | Contenidos, Backoffice & QA | **Fase 3, Fase 6, Fase 8, Fase 9** | Páginas informativas (Nosotros, Servicios, Blog, Contacto), panel administrativo completo (Dashboard, CRUDs, DataTable genérico) y verificación final. |
 
 ---
 
