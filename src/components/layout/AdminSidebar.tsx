@@ -22,6 +22,24 @@ export function AdminSidebar({ rolId = 1 }: AdminSidebarProps) {
         >
           <i className="bi bi-controller me-2"></i>Catálogo
         </NavLink>
+        <NavLink
+          to="/admin/boletas"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          <i className="bi bi-receipt me-2"></i>Boletas
+        </NavLink>
+        <NavLink
+          to="/admin/categorias"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          <i className="bi bi-tags me-2"></i>Categorías
+        </NavLink>
+        <NavLink
+          to="/admin/reportes"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+        >
+          <i className="bi bi-graph-up me-2"></i>Reportes
+        </NavLink>
         {rolId === 1 && (
           <NavLink
             to="/admin/usuarios"

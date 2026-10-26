@@ -41,6 +41,7 @@ export default function ProductoDetalle() {
   }
 
   const agotado = producto.stock <= 0
+  const esStockCritico = !agotado && producto.stockCritico != null && producto.stock <= producto.stockCritico
   const rutaImagen = producto.imagen
     ? producto.imagen.startsWith('/')
       ? producto.imagen
@@ -85,15 +86,19 @@ export default function ProductoDetalle() {
           />
         </div>
         <div className="col-md-7">
-          <span className="badge bg-secondary mb-2">
+          <span className="badge badge-categoria mb-2">
             {obtenerNombreCategoria(producto.categoriaId)}
           </span>
           <h1 className="h3">{producto.nombre}</h1>
           <p className="text-muted">{producto.descripcion || 'Sin descripción disponible.'}</p>
           <p className="display-6 text-accent">{formatearPrecio(producto.precio)}</p>
-          <p>
+          <p className="d-flex align-items-center gap-2">
             {agotado ? (
               <span className="badge bg-danger">Sin stock</span>
+            ) : esStockCritico ? (
+              <span className="badge bg-warning text-dark d-inline-flex align-items-center gap-1">
+                <i className="bi bi-exclamation-triangle-fill"></i> ¡Stock Crítico: solo quedan {producto.stock} unidades!
+              </span>
             ) : (
               <span className="badge bg-success">Stock disponible: {producto.stock}</span>
             )}

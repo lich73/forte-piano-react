@@ -12,6 +12,7 @@ import {
   enteroEnRango
 } from '../../utils/validaciones'
 import { alertaExito, alertaError } from '../../utils/alertas'
+import { generarCodigoPorCategoria } from '../../utils/codigos'
 
 export default function AdminProductoForm() {
   const navigate = useNavigate()
@@ -178,6 +179,11 @@ export default function AdminProductoForm() {
               <Form.Control.Feedback type="invalid">
                 Código obligatorio, mínimo 3 caracteres y único.
               </Form.Control.Feedback>
+              {!esEdicion && (
+                <Form.Text className="text-muted">
+                  Se sugiere automáticamente al elegir la categoría.
+                </Form.Text>
+              )}
             </Form.Group>
           </Col>
 
@@ -286,7 +292,20 @@ export default function AdminProductoForm() {
               <Form.Label>Categoría</Form.Label>
               <Form.Select
                 value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
+                onChange={(e) => {
+                  const nuevaCatId = e.target.value
+                  setCategoriaId(nuevaCatId)
+                  if (!esEdicion && nuevaCatId) {
+                    const catObj = categorias.find((c) => c.id === Number(nuevaCatId))
+                    const codigoSugerido = generarCodigoPorCategoria(
+                      nuevaCatId,
+                      catObj?.nombre,
+                      productos
+                    )
+                    setCodigo(codigoSugerido)
+                    setTocado((prev) => ({ ...prev, codigo: true, categoriaId: true }))
+                  }
+                }}
                 onBlur={() => setTocado((prev) => ({ ...prev, categoriaId: true }))}
                 isValid={tocado.categoriaId && categoriaValida}
                 isInvalid={tocado.categoriaId && !categoriaValida}

@@ -17,6 +17,7 @@ export function ProductCard({ producto, mostrarColumna = false }: ProductCardPro
   const { obtenerNombreCategoria } = useTablasMaestras()
 
   const agotado = producto.stock <= 0
+  const esStockCritico = !agotado && producto.stockCritico != null && producto.stock <= producto.stockCritico
   const urlDetalle = `/producto-detalle?codigo=${encodeURIComponent(producto.codigo)}`
   const rutaImagen = producto.imagen
     ? producto.imagen.startsWith('/')
@@ -49,7 +50,7 @@ export function ProductCard({ producto, mostrarColumna = false }: ProductCardPro
         style={{ cursor: 'pointer' }}
         onClick={handleCardClick}
       >
-        <Badge bg="secondary" className="align-self-start mb-2">
+        <Badge className="badge-categoria align-self-start mb-2">
           {obtenerNombreCategoria(producto.categoriaId)}
         </Badge>
         <Card.Title as="h3" className="h6">
@@ -60,11 +61,15 @@ export function ProductCard({ producto, mostrarColumna = false }: ProductCardPro
         <Card.Text className="fw-bold text-accent mb-2">
           {formatearPrecio(producto.precio)}
         </Card.Text>
-        <div className="small text-muted mb-3">
+        <div className="small mb-3">
           {agotado ? (
             <Badge bg="danger">Sin stock</Badge>
+          ) : esStockCritico ? (
+            <Badge bg="warning" text="dark" className="d-inline-flex align-items-center gap-1">
+              <i className="bi bi-exclamation-triangle-fill"></i> ¡Stock Crítico: {producto.stock}!
+            </Badge>
           ) : (
-            `Stock: ${producto.stock}`
+            <span className="text-muted">Stock: {producto.stock}</span>
           )}
         </div>
         <div className="mt-auto d-flex gap-2">

@@ -33,8 +33,8 @@ export default function Productos() {
 
       <div className="row g-3 mb-4 bg-forte-panel p-3 rounded">
         <div className="col-md-8">
-          <InputGroup>
-            <InputGroup.Text className="bg-transparent text-muted">
+          <InputGroup className="forte-search-group">
+            <InputGroup.Text id="iconoBusqueda">
               <i className="bi bi-search"></i>
             </InputGroup.Text>
             <Form.Control
@@ -43,6 +43,8 @@ export default function Productos() {
               placeholder="Buscar instrumento musical por nombre..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
+              aria-label="Buscar instrumento musical por nombre"
+              aria-describedby="iconoBusqueda"
             />
           </InputGroup>
         </div>

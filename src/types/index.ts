@@ -74,3 +74,26 @@ export interface Mensaje {
   comentario: string
   fecha: string
 }
+
+export interface ItemBoleta {
+  codigo: string
+  nombre: string
+  precioUnitario: number
+  cantidad: number
+  subtotal: number
+}
+
+export interface Boleta {
+  id: string
+  folio: number
+  fecha: string
+  clienteRun?: string
+  clienteNombre: string
+  clienteCorreo: string
+  items: ItemBoleta[]
+  subtotalNeto: number
+  iva: number
+  total: number
+  metodoPago: string
+  estado: 'Emitida' | 'Anulada'
+}

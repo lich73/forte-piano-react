@@ -3,8 +3,8 @@
     --forte-bg-alt: #1c1c1c;
     --forte-panel: #262626;
     --forte-border: #3a3a3a;
-    --forte-text: #f0f0f0;
-    --forte-text-muted: #a0a0a0;
+    --forte-text: #f8fafc;
+    --forte-text-muted: #94a3b8;
     --forte-gold: #c5a059;
     --forte-gold-hover: #d4af37;
     --forte-gradient: linear-gradient(135deg, var(--forte-gold), var(--forte-gold-hover));
@@ -103,8 +103,8 @@ a {
 }
 
 .card-img-top {
-    background-color: #0e1420;
-    object-fit: cover;
+    background-color: transparent !important;
+    object-fit: contain;
     height: 200px;
 }
 
@@ -151,24 +151,106 @@ footer.forte-footer a:hover {
     color: var(--forte-gold);
 }
 
-/* Forms */
+/* Forms & Search Input */
 .form-control,
 .form-select {
-    background-color: var(--forte-bg-alt);
-    border: 1px solid var(--forte-border);
-    color: var(--forte-text);
+    background-color: var(--forte-bg-alt) !important;
+    border: 1px solid var(--forte-border) !important;
+    color: #ffffff !important;
+}
+
+.form-select option {
+    background-color: var(--forte-bg-alt) !important;
+    color: #ffffff !important;
 }
 
 .form-control:focus,
 .form-select:focus {
-    background-color: var(--forte-bg-alt);
-    color: var(--forte-text);
-    border-color: var(--forte-gold);
+    background-color: var(--forte-bg-alt) !important;
+    color: #ffffff !important;
+    border-color: var(--forte-gold) !important;
+    box-shadow: 0 0 0 0.2rem rgba(197, 160, 89, 0.25) !important;
+}
+
+/* Placeholders con legibilidad óptima sobre fondo oscuro */
+::placeholder,
+.form-control::placeholder {
+    color: #94a3b8 !important;
+    opacity: 1 !important;
+}
+
+/* InputGroup estilizado de búsqueda unificada (Lupa integrada + Input oscuro) */
+.input-group-text,
+.forte-search-group .input-group-text {
+    background-color: var(--forte-bg-alt) !important;
+    border: 1px solid var(--forte-border) !important;
+    border-right: none !important;
+    color: var(--forte-gold) !important;
+    padding-left: 0.95rem;
+    padding-right: 0.95rem;
+    font-size: 1.05rem;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.input-group > .form-control,
+.forte-search-group > .form-control {
+    border-left: none !important;
+    background-color: var(--forte-bg-alt) !important;
+}
+
+.input-group:focus-within {
     box-shadow: 0 0 0 0.2rem rgba(197, 160, 89, 0.25);
+    border-radius: 0.375rem;
+}
+
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control {
+    border-color: var(--forte-gold) !important;
+    box-shadow: none !important;
+}
+
+.input-group:focus-within .input-group-text {
+    color: var(--forte-gold-hover) !important;
+}
+
+/* Paginación con estilo oscuro y acentos dorados */
+.pagination {
+    margin-bottom: 0;
+    gap: 3px;
+}
+
+.pagination .page-link {
+    background-color: var(--forte-bg-alt) !important;
+    border: 1px solid var(--forte-border) !important;
+    color: var(--forte-text) !important;
+    border-radius: 0.375rem !important;
+    padding: 0.375rem 0.75rem;
+    font-weight: 500;
+    transition: all 0.15s ease;
+}
+
+.pagination .page-link:hover {
+    background-color: rgba(197, 160, 89, 0.15) !important;
+    border-color: var(--forte-gold) !important;
+    color: var(--forte-gold) !important;
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--forte-gradient) !important;
+    border-color: var(--forte-gold) !important;
+    color: #111111 !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(197, 160, 89, 0.3);
+}
+
+.pagination .page-item.disabled .page-link {
+    background-color: rgba(28, 28, 28, 0.5) !important;
+    border-color: var(--forte-border) !important;
+    color: #555555 !important;
 }
 
 .form-label {
-    color: var(--forte-text-muted);
+    color: #cbd5e1;
     font-weight: 500;
 }
 
@@ -274,5 +356,163 @@ p, span, div, h1, h2, h3, h4, h5, h6, .card-text, .card-title, .accordion-body {
 }
 .swal2-html-container p {
     color: var(--forte-text) !important;
+}
+
+/* Breadcrumbs con Alto Contraste en Fondo Oscuro */
+.breadcrumb {
+    background-color: transparent !important;
+    padding: 0.5rem 0;
+    margin-bottom: 1.5rem;
+}
+.breadcrumb-item a {
+    color: var(--forte-gold) !important;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s ease;
+}
+.breadcrumb-item a:hover {
+    color: var(--forte-gold-hover) !important;
+    text-decoration: underline;
+}
+.breadcrumb-item.active {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+.breadcrumb-item + .breadcrumb-item::before {
+    color: #71717a !important;
+}
+
+/* Badges de Categoría y Subcategoría con Alto Contraste */
+.badge.bg-secondary,
+.badge-categoria {
+    background-color: rgba(197, 160, 89, 0.18) !important;
+    color: #f7df94 !important;
+    border: 1px solid rgba(197, 160, 89, 0.45) !important;
+    font-weight: 600;
+    padding: 0.35em 0.65em;
+    letter-spacing: 0.02em;
+}
+
+/* =========================================================
+   BOLETA ELECTRÓNICA: ALTO CONTRASTE Y TIPOGRAFÍA DEFINIDA
+   Asegura legibilidad total sobre el fondo blanco del comprobante
+   ========================================================= */
+#boletaImprimible {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+#boletaImprimible,
+#boletaImprimible * {
+    color: #0f172a !important;
+}
+#boletaImprimible h4,
+#boletaImprimible .boleta-empresa {
+    color: #0d233a !important;
+    font-weight: 800 !important;
+    font-size: 18px !important;
+}
+#boletaImprimible .boleta-subtitulo {
+    color: #334155 !important;
+    font-size: 12px !important;
+}
+#boletaImprimible .boleta-folio-box {
+    border: 2px solid #0056b3 !important;
+    background: #f0f7ff !important;
+    display: inline-block !important;
+    padding: 6px 14px !important;
+    border-radius: 4px !important;
+}
+#boletaImprimible .boleta-folio-box span {
+    color: #0056b3 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+}
+#boletaImprimible .boleta-info-box {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 10px 12px !important;
+    border-radius: 6px !important;
+    margin-bottom: 12px !important;
+}
+#boletaImprimible .boleta-info-box p {
+    color: #1e293b !important;
+    margin: 3px 0 !important;
+}
+#boletaImprimible .boleta-info-box strong {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+#boletaImprimible table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 12px !important;
+}
+#boletaImprimible thead tr,
+#boletaImprimible thead th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
+    padding: 6px 4px !important;
+}
+#boletaImprimible tbody tr {
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+#boletaImprimible tbody td {
+    color: #0f172a !important;
+    padding: 6px 4px !important;
+}
+#boletaImprimible tbody td strong {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+}
+#boletaImprimible tbody td small {
+    color: #475569 !important;
+    font-weight: 500 !important;
+}
+#boletaImprimible .boleta-totales {
+    border-top: 1px dashed #cbd5e1 !important;
+    padding-top: 8px !important;
+}
+#boletaImprimible .boleta-totales span {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+}
+#boletaImprimible .boleta-total-pagado {
+    color: #0056b3 !important;
+    font-size: 17px !important;
+    font-weight: 800 !important;
+}
+#boletaImprimible .boleta-footer-aviso {
+    color: #475569 !important;
+    font-size: 11px !important;
+    text-align: center !important;
+    margin-top: 12px !important;
+}
+
+/* Enlaces de títulos de tarjetas con hover dorado */
+.card-title a {
+    color: var(--forte-text);
+    transition: color 0.15s ease;
+}
+.card-title a:hover {
+    color: var(--forte-gold) !important;
+}
+
+/* Scrollbar oscura personalizada */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--forte-bg);
+}
+::-webkit-scrollbar-thumb {
+    background: #333333;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--forte-gold);
 }
 

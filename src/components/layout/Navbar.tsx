@@ -91,6 +91,10 @@ export function Navbar({ totalCarrito }: NavbarProps) {
                   align="end"
                   menuVariant="dark"
                 >
+                  <NavDropdown.Item as={Link} to="/mis-boletas" id="navMisBoletas">
+                    <i className="bi bi-receipt me-2"></i> Mis Boletas / Compras
+                  </NavDropdown.Item>
+                  <NavDropdown.Divider />
                   <NavDropdown.Item
                     as="button"
                     className="text-danger"

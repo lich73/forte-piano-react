@@ -16,12 +16,16 @@ import Servicios from './pages/Servicios'
 import Blog from './pages/Blog'
 import BlogDetalle from './pages/BlogDetalle'
 import Contacto from './pages/Contacto'
+import MisBoletas from './pages/MisBoletas'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProductos from './pages/admin/AdminProductos'
 import AdminProductoForm from './pages/admin/AdminProductoForm'
 import AdminUsuarios from './pages/admin/AdminUsuarios'
 import AdminUsuarioForm from './pages/admin/AdminUsuarioForm'
+import AdminBoletas from './pages/admin/AdminBoletas'
+import AdminCategorias from './pages/admin/AdminCategorias'
+import AdminReportes from './pages/admin/AdminReportes'
 
 export function App() {
   return (
@@ -35,6 +39,7 @@ export function App() {
             <Route path="/productos" element={<Productos />} />
             <Route path="/producto-detalle" element={<ProductoDetalle />} />
             <Route path="/carrito" element={<Carrito />} />
+            <Route path="/mis-boletas" element={<MisBoletas />} />
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<Registro />} />
             <Route path="/nosotros" element={<Nosotros />} />
@@ -50,6 +55,9 @@ export function App() {
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/productos" element={<AdminProductos />} />
               <Route path="/admin/productos/form" element={<AdminProductoForm />} />
+              <Route path="/admin/boletas" element={<AdminBoletas />} />
+              <Route path="/admin/categorias" element={<AdminCategorias />} />
+              <Route path="/admin/reportes" element={<AdminReportes />} />
 
               {/* Rutas exclusivas del rol 1 (Administrador) */}
               <Route element={<RutaProtegida rolesPermitidos={[1]} />}>

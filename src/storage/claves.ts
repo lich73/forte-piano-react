@@ -8,5 +8,6 @@ export const FORTEPIANO_KEYS = {
   carrito: 'fortepiano_carrito',
   contactos: 'fortepiano_contactos',
   blog: 'fortepiano_blog',
-  sesion: 'fortepiano_sesion'
+  sesion: 'fortepiano_sesion',
+  boletas: 'fortepiano_boletas'
 } as const
