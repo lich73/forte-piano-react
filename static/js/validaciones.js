@@ -14,32 +14,42 @@ function validarPassword(password) {
     return typeof password === "string" && password.length >= 4 && password.length <= 10;
 }
 
-/* Valida un RUN chileno sin puntos ni guion (ej: 123456785) usando el algoritmo modulo 11. */
-function validarRun(run) {
-    if (!run) return false;
-    run = run.toUpperCase().trim();
-    if (run.length < 7 || run.length > 9) return false;
+function limpiarRun(run) {
+    if (!run || typeof run !== "string") return "";
+    return run.replace(/[.\-\s]/g, "").toUpperCase().trim();
+}
 
-    const cuerpo = run.slice(0, -1);
-    const dv = run.slice(-1);
-
-    if (!/^[0-9]+$/.test(cuerpo)) return false;
-    if (!/^[0-9K]$/.test(dv)) return false;
-
+function calcularDigitoVerificador(cuerpo) {
+    if (!cuerpo || !/^[0-9]+$/.test(cuerpo)) return "";
     let suma = 0;
     let multiplicador = 2;
     for (let i = cuerpo.length - 1; i >= 0; i--) {
         suma += parseInt(cuerpo.charAt(i), 10) * multiplicador;
         multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
     }
-
     const resto = 11 - (suma % 11);
-    let dvEsperado;
-    if (resto === 11) dvEsperado = "0";
-    else if (resto === 10) dvEsperado = "K";
-    else dvEsperado = String(resto);
+    if (resto === 11) return "0";
+    if (resto === 10) return "K";
+    return String(resto);
+}
 
-    return dv === dvEsperado;
+/* Valida un RUN chileno (con o sin puntos/guion) usando el algoritmo modulo 11. */
+function validarRun(run) {
+    if (!run || typeof run !== "string") return false;
+    const texto = run.trim();
+    if (!/^[0-9.]+-?[0-9Kk]$/.test(texto)) return false;
+
+    const limpio = limpiarRun(texto);
+    if (limpio.length < 7 || limpio.length > 9) return false;
+
+    const cuerpo = limpio.slice(0, -1);
+    const dv = limpio.slice(-1);
+
+    if (!/^[0-9]+$/.test(cuerpo)) return false;
+    if (Number(cuerpo) < 100000) return false;
+    if (!/^[0-9K]$/.test(dv)) return false;
+
+    return dv === calcularDigitoVerificador(cuerpo);
 }
 
 function marcarValido(input) {

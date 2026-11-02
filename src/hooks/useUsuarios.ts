@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { FORTEPIANO_KEYS } from '../storage/claves'
 import { useColeccion } from '../storage/useColeccion'
 import { Usuario } from '../types'
+import { limpiarRun } from '../utils/validaciones'
 
 /**
  * Hook para consultar y gestionar los usuarios del sistema.
@@ -11,8 +12,8 @@ export function useUsuarios() {
 
   const obtenerUsuarioPorRun = useCallback(
     (run: string): Usuario | undefined => {
-      const limpio = run.toUpperCase().trim()
-      return usuarios.find((u) => u.run.toUpperCase().trim() === limpio)
+      const limpio = limpiarRun(run)
+      return usuarios.find((u) => limpiarRun(u.run) === limpio)
     },
     [usuarios]
   )
@@ -20,14 +21,15 @@ export function useUsuarios() {
   const guardarUsuario = useCallback(
     (usuario: Usuario) => {
       guardar((prev) => {
-        const runNormalizado = usuario.run.toUpperCase().trim()
-        const index = prev.findIndex((u) => u.run.toUpperCase().trim() === runNormalizado)
+        const runNormalizado = limpiarRun(usuario.run)
+        const usuarioNormalizado = { ...usuario, run: runNormalizado }
+        const index = prev.findIndex((u) => limpiarRun(u.run) === runNormalizado)
         if (index >= 0) {
           const actualizados = [...prev]
-          actualizados[index] = usuario
+          actualizados[index] = usuarioNormalizado
           return actualizados
         }
-        return [...prev, usuario]
+        return [...prev, usuarioNormalizado]
       })
     },
     [guardar]
@@ -35,8 +37,8 @@ export function useUsuarios() {
 
   const eliminarUsuario = useCallback(
     (run: string) => {
-      const runNormalizado = run.toUpperCase().trim()
-      guardar((prev) => prev.filter((u) => u.run.toUpperCase().trim() !== runNormalizado))
+      const runNormalizado = limpiarRun(run)
+      guardar((prev) => prev.filter((u) => limpiarRun(u.run) !== runNormalizado))
     },
     [guardar]
   )

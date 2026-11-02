@@ -5,7 +5,9 @@ import { FORTEPIANO_KEYS } from '../storage/claves'
 import { Region, Comuna, Usuario } from '../types'
 import { REGIONES_INICIALES, COMUNAS_INICIALES } from '../data/seed'
 import {
+  limpiarRun,
   validarRun,
+  obtenerMensajeErrorRun,
   validarCorreo,
   validarPassword,
   textoRequerido
@@ -72,9 +74,11 @@ export default function Registro() {
     }
   }
 
-  const runLimpio = formData.run.toUpperCase().trim()
-  const runFormatoValido = validarRun(runLimpio)
-  const runEsDuplicado = runFormatoValido && obtenerUsuarios().some((u) => u.run.toUpperCase().trim() === runLimpio)
+  const runLimpio = limpiarRun(formData.run)
+  const runFormatoValido = validarRun(formData.run)
+  const runEsDuplicado =
+    runFormatoValido &&
+    obtenerUsuarios().some((u) => limpiarRun(u.run) === runLimpio)
   const runValido = runFormatoValido && !runEsDuplicado
 
   const nombreValido = textoRequerido(formData.nombre, 50)
@@ -151,11 +155,11 @@ export default function Registro() {
               <div className="row g-3">
                 <div className="col-md-6">
                   <Form.Group controlId="runRegistro">
-                    <Form.Label>RUN (sin puntos ni guion)</Form.Label>
+                    <Form.Label>RUN (con o sin puntos/guión)</Form.Label>
                     <Form.Control
                       type="text"
-                      maxLength={9}
-                      placeholder="Ej: 123456785"
+                      maxLength={12}
+                      placeholder="Ej: 123456785 o 12.345.678-5"
                       value={formData.run}
                       onChange={(e) => handleChange('run', e.target.value)}
                       onBlur={() => handleBlur('run')}
@@ -165,7 +169,7 @@ export default function Registro() {
                     <Form.Control.Feedback type="invalid">
                       {runEsDuplicado
                         ? 'El RUN ingresado ya se encuentra registrado.'
-                        : 'RUN invalido. Debe tener entre 7 y 9 caracteres y digito verificador correcto.'}
+                        : obtenerMensajeErrorRun(formData.run)}
                     </Form.Control.Feedback>
                   </Form.Group>
                 </div>

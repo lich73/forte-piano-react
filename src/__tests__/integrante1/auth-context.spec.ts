@@ -58,7 +58,7 @@ describe('Integrante 1 - Test 2: Lógica de Autenticación y Sesión', () => {
     const usuariosConInactivo: Usuario[] = [
       ...usuarios,
       {
-        run: '999999999',
+        run: '999999995',
         nombre: 'Usuario',
         apellidos: 'Inactivo',
         correo: 'bloqueado@gmail.com',
