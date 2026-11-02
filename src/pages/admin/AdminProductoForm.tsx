@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Form, Row, Col, Button } from 'react-bootstrap'
+import { Form, Row, Col, Button, Card } from 'react-bootstrap'
 import Swal from 'sweetalert2'
 import { useProductos } from '../../hooks/useProductos'
 import { useAuth } from '../../context/AuthContext'
@@ -13,6 +13,7 @@ import {
 } from '../../utils/validaciones'
 import { alertaExito, alertaError } from '../../utils/alertas'
 import { generarCodigoPorCategoria } from '../../utils/codigos'
+import { formatearPrecio } from '../../utils/formato'
 
 export default function AdminProductoForm() {
   const navigate = useNavigate()
@@ -49,6 +50,11 @@ export default function AdminProductoForm() {
   const [imagen, setImagen] = useState('')
   const [estado, setEstado] = useState<'Activo' | 'Inactivo'>('Activo')
 
+  // Campos de oferta
+  const [enOferta, setEnOferta] = useState(false)
+  const [porcentajeDescuento, setPorcentajeDescuento] = useState('')
+  const [precioOferta, setPrecioOferta] = useState('')
+
   const [tocado, setTocado] = useState({
     codigo: false,
     nombre: false,
@@ -56,7 +62,8 @@ export default function AdminProductoForm() {
     precio: false,
     stock: false,
     stockCritico: false,
-    categoriaId: false
+    categoriaId: false,
+    oferta: false
   })
 
   // Cargar datos si estamos en modo edición
@@ -73,6 +80,17 @@ export default function AdminProductoForm() {
         setCategoriaId(String(prod.categoriaId))
         setImagen(prod.imagen || '')
         setEstado(prod.estado)
+        setEnOferta(Boolean(prod.enOferta))
+        setPorcentajeDescuento(
+          prod.porcentajeDescuento && prod.porcentajeDescuento > 0
+            ? String(prod.porcentajeDescuento)
+            : ''
+        )
+        setPrecioOferta(
+          prod.precioOferta != null && prod.precioOferta > 0
+            ? String(prod.precioOferta)
+            : ''
+        )
       } else {
         alertaError('Error', 'El instrumento musical no fue encontrado.').then(() => {
           navigate('/admin/productos')
@@ -80,6 +98,24 @@ export default function AdminProductoForm() {
       }
     }
   }, [codigoParam, obtenerProducto, navigate])
+
+  const handlePorcentajeChange = (nuevoPorcentaje: string) => {
+    setPorcentajeDescuento(nuevoPorcentaje)
+    const pNormal = Number(precio)
+    const porc = Number(nuevoPorcentaje)
+    if (!isNaN(pNormal) && pNormal > 0 && !isNaN(porc) && porc > 0 && porc < 100) {
+      setPrecioOferta(String(Math.round(pNormal * (1 - porc / 100))))
+    }
+  }
+
+  const handlePrecioOfertaChange = (nuevoPrecioOferta: string) => {
+    setPrecioOferta(nuevoPrecioOferta)
+    const pNormal = Number(precio)
+    const pOferta = Number(nuevoPrecioOferta)
+    if (!isNaN(pNormal) && pNormal > 0 && !isNaN(pOferta) && pOferta > 0 && pOferta < pNormal) {
+      setPorcentajeDescuento(String(Math.round(((pNormal - pOferta) / pNormal) * 100)))
+    }
+  }
 
   // Validaciones
   const codigoValido =
@@ -96,6 +132,21 @@ export default function AdminProductoForm() {
   const stockCriticoValido = !stockCritico || enteroEnRango(stockCritico, 0)
   const categoriaValida = Boolean(categoriaId && categoriaId !== '')
 
+  const precioNum = Number(precio)
+  const precioOfertaNum = Number(precioOferta)
+  const porcentajeNum = Number(porcentajeDescuento)
+
+  const ofertaValida =
+    !enOferta ||
+    (precioValido &&
+      precioNum > 0 &&
+      !isNaN(precioOfertaNum) &&
+      precioOfertaNum > 0 &&
+      precioOfertaNum < precioNum &&
+      !isNaN(porcentajeNum) &&
+      porcentajeNum >= 1 &&
+      porcentajeNum <= 99)
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
 
@@ -106,7 +157,8 @@ export default function AdminProductoForm() {
       precio: true,
       stock: true,
       stockCritico: true,
-      categoriaId: true
+      categoriaId: true,
+      oferta: true
     })
 
     if (
@@ -116,7 +168,8 @@ export default function AdminProductoForm() {
       !precioValido ||
       !stockValido ||
       !stockCriticoValido ||
-      !categoriaValida
+      !categoriaValida ||
+      !ofertaValida
     ) {
       alertaError('Revisa el formulario', 'Existen campos obligatorios o inválidos.')
       return
@@ -131,7 +184,10 @@ export default function AdminProductoForm() {
       stockCritico: stockCritico ? Number(stockCritico) : null,
       categoriaId: Number(categoriaId),
       imagen: imagen.trim() || 'logo.png',
-      estado
+      estado,
+      enOferta,
+      porcentajeDescuento: enOferta ? Math.round(porcentajeNum) : 0,
+      precioOferta: enOferta ? Math.round(precioOfertaNum) : null
     }
 
     guardarProducto(productoGuardar)
@@ -229,13 +285,21 @@ export default function AdminProductoForm() {
           {/* Precio */}
           <Col md={3}>
             <Form.Group controlId="precioProducto">
-              <Form.Label>Precio</Form.Label>
+              <Form.Label>Precio normal ($)</Form.Label>
               <Form.Control
                 type="number"
                 min={0}
                 step={1}
                 value={precio}
-                onChange={(e) => setPrecio(e.target.value)}
+                onChange={(e) => {
+                  const nuevoPrecio = e.target.value
+                  setPrecio(nuevoPrecio)
+                  const pNum = Number(nuevoPrecio)
+                  const porc = Number(porcentajeDescuento)
+                  if (enOferta && pNum > 0 && porc > 0 && porc < 100) {
+                    setPrecioOferta(String(Math.round(pNum * (1 - porc / 100))))
+                  }
+                }}
                 onBlur={() => setTocado((prev) => ({ ...prev, precio: true }))}
                 isValid={tocado.precio && precioValido}
                 isInvalid={tocado.precio && !precioValido}
@@ -348,6 +412,95 @@ export default function AdminProductoForm() {
                 <option value="Inactivo">Inactivo</option>
               </Form.Select>
             </Form.Group>
+          </Col>
+
+          {/* Sección de Ofertas y Descuentos */}
+          <Col xs={12}>
+            <Card className="bg-dark border-secondary mt-2">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                  <div>
+                    <h2 className="h6 mb-1 text-accent">
+                      <i className="bi bi-tag-fill me-2" />
+                      Gestión de Oferta y Promoción
+                    </h2>
+                    <small className="text-muted">
+                      Marca el instrumento en oferta e indica su porcentaje de descuento o precio promocional.
+                    </small>
+                  </div>
+                  <Form.Check
+                    type="switch"
+                    id="enOfertaProducto"
+                    label="Producto en oferta"
+                    checked={enOferta}
+                    onChange={(e) => {
+                      const activo = e.target.checked
+                      setEnOferta(activo)
+                      if (activo && !porcentajeDescuento && Number(precio) > 0) {
+                        setPorcentajeDescuento('15')
+                        setPrecioOferta(String(Math.round(Number(precio) * 0.85)))
+                      }
+                    }}
+                    className="fw-semibold text-light"
+                  />
+                </div>
+
+                {enOferta && (
+                  <Row className="g-3 mt-1">
+                    <Col md={4}>
+                      <Form.Group controlId="porcentajeDescuentoProducto">
+                        <Form.Label>Porcentaje de descuento (%)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          min={1}
+                          max={99}
+                          step={1}
+                          placeholder="Ej: 15"
+                          value={porcentajeDescuento}
+                          onChange={(e) => handlePorcentajeChange(e.target.value)}
+                          onBlur={() => setTocado((prev) => ({ ...prev, oferta: true }))}
+                          isValid={tocado.oferta && ofertaValida}
+                          isInvalid={tocado.oferta && !ofertaValida}
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={4}>
+                      <Form.Group controlId="precioOfertaProducto">
+                        <Form.Label>Precio oferta ($)</Form.Label>
+                        <Form.Control
+                          type="number"
+                          min={1}
+                          step={1}
+                          placeholder="Ej: 390990"
+                          value={precioOferta}
+                          onChange={(e) => handlePrecioOfertaChange(e.target.value)}
+                          onBlur={() => setTocado((prev) => ({ ...prev, oferta: true }))}
+                          isValid={tocado.oferta && ofertaValida}
+                          isInvalid={tocado.oferta && !ofertaValida}
+                        />
+                        <Form.Control.Feedback type="invalid">
+                          El precio oferta debe ser mayor a 0 y menor al precio normal ({formatearPrecio(precio || 0)}).
+                        </Form.Control.Feedback>
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={4} className="d-flex align-items-center">
+                      {ofertaValida && precioNum > 0 && (
+                        <div className="p-2 rounded border border-warning w-100 small">
+                          <div className="text-muted">
+                            Normal: <del>{formatearPrecio(precioNum)}</del>
+                          </div>
+                          <div className="fw-bold text-accent">
+                            Oferta: {formatearPrecio(precioOfertaNum)} (-{Math.round(porcentajeNum)}%)
+                          </div>
+                        </div>
+                      )}
+                    </Col>
+                  </Row>
+                )}
+              </Card.Body>
+            </Card>
           </Col>
         </Row>
 

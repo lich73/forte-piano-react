@@ -1,6 +1,12 @@
-import { formatearPrecio } from '../../utils/formato'
+import {
+  formatearPrecio,
+  tieneOfertaActiva,
+  obtenerPrecioEfectivo,
+  obtenerPorcentajeDescuento
+} from '../../utils/formato'
+import { Producto } from '../../types'
 
-describe('Integrante 2 - Test 3: Formateo de Precios (CLP)', () => {
+describe('Integrante 2 - Test 3: Formateo de Precios (CLP) y Ofertas', () => {
   it('debe formatear valores numéricos enteros con separador de miles chileno ($699.990)', () => {
     expect(formatearPrecio(699990)).toBe('$699.990')
     expect(formatearPrecio(3299000)).toBe('$3.299.000')
@@ -28,5 +34,33 @@ describe('Integrante 2 - Test 3: Formateo de Precios (CLP)', () => {
     expect(formatearPrecio('texto_invalido')).toBe('$0')
     expect(formatearPrecio(NaN)).toBe('$0')
     expect(formatearPrecio('')).toBe('$0')
+  })
+
+  it('debe calcular correctamente el precio de oferta y porcentaje de descuento', () => {
+    const prodConOferta: Producto = {
+      codigo: 'PD-001',
+      nombre: 'Yamaha P-45 Negro',
+      descripcion: 'Piano digital',
+      precio: 459990,
+      stock: 10,
+      stockCritico: 3,
+      categoriaId: 2,
+      imagen: 'logo.png',
+      estado: 'Activo',
+      enOferta: true,
+      porcentajeDescuento: 15,
+      precioOferta: 390990
+    }
+
+    expect(tieneOfertaActiva(prodConOferta)).toBeTrue()
+    expect(obtenerPrecioEfectivo(prodConOferta)).toBe(390990)
+    expect(obtenerPorcentajeDescuento(prodConOferta)).toBe(15)
+
+    const prodSinOferta: Producto = {
+      ...prodConOferta,
+      enOferta: false
+    }
+    expect(tieneOfertaActiva(prodSinOferta)).toBeFalse()
+    expect(obtenerPrecioEfectivo(prodSinOferta)).toBe(459990)
   })
 })

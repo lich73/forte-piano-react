@@ -97,7 +97,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 3,
     categoriaId: 4,
     imagen: 'productos/prod-soporte-teclado-doble.webp',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: false,
+    porcentajeDescuento: 0,
+    precioOferta: null
   },
   {
     codigo: 'PD-006',
@@ -108,7 +111,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 5,
     categoriaId: 2,
     imagen: 'productos/prod-piano-yamaha-arius-ydp-146-rosewood.webp',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: false,
+    porcentajeDescuento: 0,
+    precioOferta: null
   },
   {
     codigo: 'AD-001',
@@ -119,7 +125,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 4,
     categoriaId: 4,
     imagen: 'productos/prod-funda-gtsa-key-61-ruedas.webp',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: true,
+    porcentajeDescuento: 20,
+    precioOferta: 20000
   },
   {
     codigo: 'PA-001',
@@ -130,7 +139,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 2,
     categoriaId: 1,
     imagen: 'productos/prod-piano-yamaha-b10.webp',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: false,
+    porcentajeDescuento: 0,
+    precioOferta: null
   },
   {
     codigo: 'PD-001',
@@ -141,7 +153,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 5,
     categoriaId: 2,
     imagen: 'productos/prod-piano-yamaha-p45-negro.webp',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: true,
+    porcentajeDescuento: 15,
+    precioOferta: 390990
   },
   {
     codigo: 'SY-001',
@@ -152,7 +167,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 3,
     categoriaId: 3,
     imagen: 'productos/prod-teclado-nord-electro-6d-61.jpg',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: true,
+    porcentajeDescuento: 10,
+    precioOferta: 1709990
   },
   {
     codigo: 'AD-003',
@@ -163,7 +181,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 5,
     categoriaId: 4,
     imagen: 'productos/prod-pedal-sp-34.webp',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: false,
+    porcentajeDescuento: 0,
+    precioOferta: null
   },
   {
     codigo: 'PD-002',
@@ -174,7 +195,10 @@ export const PRODUCTOS_INICIALES: Producto[] = [
     stockCritico: 4,
     categoriaId: 2,
     imagen: 'productos/prod-piano-donner-ddp-80.webp',
-    estado: 'Activo'
+    estado: 'Activo',
+    enOferta: true,
+    porcentajeDescuento: 20,
+    precioOferta: 527990
   }
 ]
 
@@ -242,8 +266,28 @@ export function inicializarDatos(): void {
   if (!localStorage.getItem(FORTEPIANO_KEYS.usuarios)) {
     localStorage.setItem(FORTEPIANO_KEYS.usuarios, JSON.stringify(USUARIOS_INICIALES))
   }
-  if (!localStorage.getItem(FORTEPIANO_KEYS.productos)) {
+  const rawProductos = localStorage.getItem(FORTEPIANO_KEYS.productos)
+  if (!rawProductos) {
     localStorage.setItem(FORTEPIANO_KEYS.productos, JSON.stringify(PRODUCTOS_INICIALES))
+  } else {
+    try {
+      const actuales: Producto[] = JSON.parse(rawProductos)
+      const tieneCampoOferta = actuales.some((p) => typeof p.enOferta === 'boolean')
+      if (!tieneCampoOferta) {
+        const migrados = actuales.map((p) => {
+          const semilla = PRODUCTOS_INICIALES.find((s) => s.codigo === p.codigo)
+          return {
+            ...p,
+            enOferta: semilla?.enOferta ?? false,
+            porcentajeDescuento: semilla?.porcentajeDescuento ?? 0,
+            precioOferta: semilla?.precioOferta ?? null
+          }
+        })
+        localStorage.setItem(FORTEPIANO_KEYS.productos, JSON.stringify(migrados))
+      }
+    } catch {
+      localStorage.setItem(FORTEPIANO_KEYS.productos, JSON.stringify(PRODUCTOS_INICIALES))
+    }
   }
   if (!localStorage.getItem(FORTEPIANO_KEYS.blog)) {
     localStorage.setItem(FORTEPIANO_KEYS.blog, JSON.stringify(NOTICIAS_INICIALES))

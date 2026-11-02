@@ -3,7 +3,12 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Card, Badge, Button } from 'react-bootstrap'
 import { Producto } from '../../types'
 import { useCart } from '../../context/CartContext'
-import { formatearPrecio } from '../../utils/formato'
+import {
+  formatearPrecio,
+  tieneOfertaActiva,
+  obtenerPrecioEfectivo,
+  obtenerPorcentajeDescuento
+} from '../../utils/formato'
 import { useTablasMaestras } from '../../hooks/useTablasMaestras'
 
 interface ProductCardProps {
@@ -18,6 +23,10 @@ export function ProductCard({ producto, mostrarColumna = false }: ProductCardPro
 
   const agotado = producto.stock <= 0
   const esStockCritico = !agotado && producto.stockCritico != null && producto.stock <= producto.stockCritico
+  const enOferta = tieneOfertaActiva(producto)
+  const precioEfectivo = obtenerPrecioEfectivo(producto)
+  const descuento = obtenerPorcentajeDescuento(producto)
+
   const urlDetalle = `/producto-detalle?codigo=${encodeURIComponent(producto.codigo)}`
   const rutaImagen = producto.imagen
     ? producto.imagen.startsWith('/')
@@ -35,7 +44,16 @@ export function ProductCard({ producto, mostrarColumna = false }: ProductCardPro
   }
 
   const cardContent = (
-    <Card className="h-100 card-forte-hover">
+    <Card className={`h-100 card-forte-hover position-relative ${enOferta ? 'border-warning' : ''}`}>
+      {enOferta && (
+        <Badge
+          bg="danger"
+          className="position-absolute top-0 end-0 m-2 px-2 py-1 shadow-sm"
+          style={{ zIndex: 2, fontSize: '0.78rem' }}
+        >
+          <i className="bi bi-tag-fill me-1"></i>-{descuento}% OFERTA
+        </Badge>
+      )}
       <Link to={urlDetalle}>
         <Card.Img
           variant="top"
@@ -58,9 +76,22 @@ export function ProductCard({ producto, mostrarColumna = false }: ProductCardPro
             {producto.nombre}
           </Link>
         </Card.Title>
-        <Card.Text className="fw-bold text-accent mb-2">
-          {formatearPrecio(producto.precio)}
-        </Card.Text>
+        <div className="mb-2">
+          {enOferta ? (
+            <div className="d-flex align-items-baseline gap-2 flex-wrap">
+              <span className="fw-bold text-accent fs-5">
+                {formatearPrecio(precioEfectivo)}
+              </span>
+              <del className="text-muted small">
+                {formatearPrecio(producto.precio)}
+              </del>
+            </div>
+          ) : (
+            <span className="fw-bold text-accent">
+              {formatearPrecio(producto.precio)}
+            </span>
+          )}
+        </div>
         <div className="small mb-3">
           {agotado ? (
             <Badge bg="danger">Sin stock</Badge>
