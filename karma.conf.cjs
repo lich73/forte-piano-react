@@ -69,6 +69,13 @@ module.exports = (config) => {
       { 'reporter:desglose': ['type', DesgloseReporter] }
     ],
     frameworks: ['vite', 'jasmine'],
+    vite: {
+      config: {
+        server: {
+          preTransformRequests: false
+        }
+      }
+    },
     client: {
       jasmine: {
         random: false

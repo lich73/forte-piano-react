@@ -40,3 +40,4 @@ describe('Tests Varios - 1. Categoría: RENDER', () => {
     expect(container.textContent).toContain('Catálogo')
   })
 })
+

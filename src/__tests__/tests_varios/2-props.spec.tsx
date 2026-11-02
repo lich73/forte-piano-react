@@ -49,3 +49,4 @@ describe('Tests Varios - 2. Categoría: PROPS', () => {
     expect(container.textContent).toContain('Evento gratuito para estudiantes y amantes de la música.')
   })
 })
+

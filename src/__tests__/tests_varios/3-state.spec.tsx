@@ -50,3 +50,4 @@ describe('Tests Varios - 3. Categoría: STATE (Estado)', () => {
     expect(botonFiltro.textContent).toContain('Viendo solo ofertas')
   })
 })
+
