@@ -16,14 +16,11 @@ describe('Integrante 1 - Test 1: Utilidades de validación', () => {
       expect(calcularDigitoVerificador('11222333')).toBe('9')
       expect(calcularDigitoVerificador('20111333')).toBe('4')
       expect(calcularDigitoVerificador('76543210')).toBe('3')
-      // Caso donde resto = 10 -> K (ej: 11111112 -> 2*2+1*3+1*4+1*5+1*6+1*7+1*2+1*3 = 34; 34%11=1; 11-1=10 -> K)
       expect(calcularDigitoVerificador('11111112')).toBe('K')
-      // Caso donde resto = 11 -> 0 (ej: 11111117 -> 7*2+3+4+5+6+7+2+3 = 44; 44%11=0; 11-0=11 -> 0)
       expect(calcularDigitoVerificador('11111117')).toBe('0')
     })
 
     it('debe aceptar RUNs chilenos válidos sin formato y con puntos/guión', () => {
-      // Casos válidos reales del sistema (seed)
       expect(validarRun('123456785')).toBeTrue()
       expect(validarRun('12345678-5')).toBeTrue()
       expect(validarRun('12.345.678-5')).toBeTrue()
@@ -33,6 +30,18 @@ describe('Integrante 1 - Test 1: Utilidades de validación', () => {
       expect(validarRun('11.111.112-K')).toBeTrue()
       expect(validarRun('11111112k')).toBeTrue()
       expect(validarRun('11.111.117-0')).toBeTrue()
+      expect(validarRun('9.876.543-3')).toBeTrue()
+    })
+
+    it('debe rechazar RUNs sin dígito verificador (cuerpo de 7 u 8 dígitos sin DV)', () => {
+      expect(validarRun('12345678')).toBeFalse()
+      expect(validarRun('12345674')).toBeFalse()
+      expect(validarRun('12.345.678')).toBeFalse()
+      expect(validarRun('12.345.674')).toBeFalse()
+      expect(validarRun('12345678-')).toBeFalse()
+      expect(validarRun('9876543')).toBeFalse()
+      expect(obtenerMensajeErrorRun('12345678')).toContain('Falta el dígito verificador')
+      expect(obtenerMensajeErrorRun('12345678')).toContain('-5')
     })
 
     it('debe rechazar RUNs con dígito verificador incorrecto e informar el DV correcto', () => {

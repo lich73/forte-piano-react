@@ -33,20 +33,30 @@ function calcularDigitoVerificador(cuerpo) {
     return String(resto);
 }
 
-/* Valida un RUN chileno (con o sin puntos/guion) usando el algoritmo modulo 11. */
+/* Valida un RUN chileno exigiendo dígito verificador y comprobando Módulo 11. */
 function validarRun(run) {
     if (!run || typeof run !== "string") return false;
     const texto = run.trim();
-    if (!/^[0-9.]+-?[0-9Kk]$/.test(texto)) return false;
+    if (texto.length === 0) return false;
 
-    const limpio = limpiarRun(texto);
-    if (limpio.length < 7 || limpio.length > 9) return false;
+    let cuerpo = "";
+    let dv = "";
 
-    const cuerpo = limpio.slice(0, -1);
-    const dv = limpio.slice(-1);
+    if (texto.indexOf("-") !== -1 || texto.indexOf(".") !== -1) {
+        const formatoConGuion = /^(?:\d{1,2}(?:\.\d{3}){2}|\d{7,8})-[0-9Kk]$/.test(texto);
+        if (!formatoConGuion) return false;
+
+        const limpio = limpiarRun(texto);
+        cuerpo = limpio.slice(0, -1);
+        dv = limpio.slice(-1);
+    } else {
+        if (!/^\d{8}[0-9Kk]$/.test(texto)) return false;
+        cuerpo = texto.slice(0, 8);
+        dv = texto.slice(8).toUpperCase();
+    }
 
     if (!/^[0-9]+$/.test(cuerpo)) return false;
-    if (Number(cuerpo) < 100000) return false;
+    if (Number(cuerpo) < 1000000) return false;
     if (!/^[0-9K]$/.test(dv)) return false;
 
     return dv === calcularDigitoVerificador(cuerpo);

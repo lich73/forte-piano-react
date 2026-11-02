@@ -35,6 +35,7 @@ export default function AdminUsuarioForm() {
   const [comunaId, setComunaId] = useState('')
   const [direccion, setDireccion] = useState('')
   const [estado, setEstado] = useState<'Activo' | 'Inactivo'>('Activo')
+  const [guardadoExitoso, setGuardadoExitoso] = useState(false)
 
   const [tocado, setTocado] = useState({
     run: false,
@@ -79,6 +80,7 @@ export default function AdminUsuarioForm() {
   const runLimpio = limpiarRun(run)
   const runFormatoValido = validarRun(run)
   const runEsDuplicado =
+    !guardadoExitoso &&
     runFormatoValido &&
     usuarios.some(
       (u) =>
@@ -116,8 +118,24 @@ export default function AdminUsuarioForm() {
       direccion: true
     })
 
+    const esFormatoRunValido = validarRun(run)
+    const existeDuplicado =
+      esFormatoRunValido &&
+      usuarios.some(
+        (u) =>
+          limpiarRun(u.run) === runLimpio &&
+          limpiarRun(u.run) !== limpiarRun(runParam || '')
+      )
+
+    if (!esFormatoRunValido || existeDuplicado) {
+      const detalleErrorRun = existeDuplicado
+        ? 'El RUN ingresado ya se encuentra registrado.'
+        : obtenerMensajeErrorRun(run)
+      alertaError('RUN inválido', detalleErrorRun)
+      return
+    }
+
     if (
-      !runValido ||
       !nombreValido ||
       !apellidosValido ||
       !correoValido ||
@@ -145,7 +163,13 @@ export default function AdminUsuarioForm() {
       estado
     }
 
-    guardarUsuario(usuarioGuardar)
+    setGuardadoExitoso(true)
+    const guardado = guardarUsuario(usuarioGuardar)
+    if (!guardado) {
+      setGuardadoExitoso(false)
+      alertaError('RUN inválido', obtenerMensajeErrorRun(run))
+      return
+    }
 
     alertaExito('Correcto', 'Usuario guardado correctamente.').then(() => {
       navigate('/admin/usuarios')
@@ -168,10 +192,10 @@ export default function AdminUsuarioForm() {
           {/* RUN */}
           <Col md={4}>
             <Form.Group controlId="runUsuario">
-              <Form.Label>RUN (con o sin puntos/guión)</Form.Label>
+              <Form.Label>RUN (con dígito verificador)</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Ej: 123456785 o 12.345.678-5"
+                placeholder="Ej: 12345678-5 o 12.345.678-5"
                 maxLength={12}
                 value={run}
                 readOnly={esEdicion}

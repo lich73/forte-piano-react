@@ -50,25 +50,34 @@ export function formatearRun(run: string): string {
 }
 
 /**
- * Valida un RUN/RUT chileno (con o sin puntos y guión, ej: 123456785, 12345678-5 o 12.345.678-K)
- * comprobando su formato y verificando estrictamente el dígito verificador mediante el algoritmo Módulo 11.
+ * Valida un RUN/RUT chileno comprobando que incluya su dígito verificador y que cumpla el algoritmo Módulo 11.
+ * - Con puntos o guión: exige guión antes del dígito verificador (ej: 12.345.678-5, 12345678-5, 9.876.543-3).
+ * - Sin puntos ni guión: exige 8 dígitos de cuerpo + 1 dígito verificador (9 caracteres, ej: 123456785).
+ *   De esta forma, un RUT de 7 u 8 dígitos ingresado sin su dígito verificador (ej: 12345678 o 12.345.678) es rechazado.
  */
 export function validarRun(run: string): boolean {
   if (!run || typeof run !== 'string') return false
   const texto = run.trim()
   if (texto.length === 0) return false
 
-  // Verificar que solo contenga dígitos, puntos opcionales, un guión opcional antes del DV, y DV 0-9 o K
-  if (!/^[0-9.]+-?[0-9Kk]$/.test(texto)) return false
+  let cuerpo = ''
+  let dv = ''
 
-  const limpio = limpiarRun(texto)
-  if (limpio.length < 7 || limpio.length > 9) return false
+  if (texto.includes('-') || texto.includes('.')) {
+    const formatoConGuion = /^(?:\d{1,2}(?:\.\d{3}){2}|\d{7,8})-[0-9Kk]$/.test(texto)
+    if (!formatoConGuion) return false
 
-  const cuerpo = limpio.slice(0, -1)
-  const dv = limpio.slice(-1)
+    const limpio = limpiarRun(texto)
+    cuerpo = limpio.slice(0, -1)
+    dv = limpio.slice(-1)
+  } else {
+    if (!/^\d{8}[0-9Kk]$/.test(texto)) return false
+    cuerpo = texto.slice(0, 8)
+    dv = texto.slice(8).toUpperCase()
+  }
 
   if (!/^[0-9]+$/.test(cuerpo)) return false
-  if (Number(cuerpo) < 100000) return false
+  if (Number(cuerpo) < 1000000) return false
   if (!/^[0-9K]$/.test(dv)) return false
 
   const dvEsperado = calcularDigitoVerificador(cuerpo)
@@ -76,26 +85,40 @@ export function validarRun(run: string): boolean {
 }
 
 /**
- * Devuelve un mensaje descriptivo indicando la causa exacta de invalidez del RUN/RUT (ej: dígito verificador erróneo).
+ * Devuelve un mensaje descriptivo indicando si falta el dígito verificador o si el dígito verificador es incorrecto.
  */
 export function obtenerMensajeErrorRun(run: string): string {
   if (!run || !run.trim()) {
     return 'El RUN es obligatorio.'
   }
-  const limpio = limpiarRun(run)
-  if (limpio.length < 7 || limpio.length > 9) {
-    return 'El RUN debe tener entre 7 y 9 caracteres (sin contar puntos ni guión).'
+
+  const texto = run.trim()
+  const sinPuntosNiEspacios = texto.replace(/[.\s]/g, '')
+
+  // Caso 1: Ingresó solo el cuerpo de 7 u 8 dígitos sin guión ni dígito verificador, o terminó en '-'
+  if (/^\d{7,8}-?$/.test(sinPuntosNiEspacios)) {
+    const soloCuerpo = sinPuntosNiEspacios.replace('-', '')
+    const dvSugerido = calcularDigitoVerificador(soloCuerpo)
+    return `Falta el dígito verificador. Para el RUN ${soloCuerpo} debes ingresar -${dvSugerido} (ej: ${soloCuerpo}-${dvSugerido}).`
   }
+
+  const limpio = limpiarRun(texto)
+  if (limpio.length < 8 || limpio.length > 9) {
+    return 'El RUN debe incluir cuerpo (7 u 8 dígitos) y dígito verificador (ej: 12345678-5).'
+  }
+
   const cuerpo = limpio.slice(0, -1)
   const dv = limpio.slice(-1)
   if (!/^[0-9]+$/.test(cuerpo) || !/^[0-9K]$/.test(dv)) {
     return 'Formato de RUN inválido. Use números y dígito verificador (0-9 o K).'
   }
+
   const dvEsperado = calcularDigitoVerificador(cuerpo)
   if (dv !== dvEsperado) {
     return `Dígito verificador incorrecto (para el RUN ${cuerpo} corresponde -${dvEsperado}).`
   }
-  return 'RUN inválido.'
+
+  return 'Formato de RUN inválido. Ejemplo válido: 12.345.678-5 o 12345678-5.'
 }
 
 export function textoRequerido(valor: string | undefined | null, maximo?: number | null): boolean {

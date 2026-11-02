@@ -19,6 +19,7 @@ export default function Registro() {
 
   const [regiones, setRegiones] = useState<Region[]>([])
   const [comunas, setComunas] = useState<Comuna[]>([])
+  const [guardadoExitoso, setGuardadoExitoso] = useState(false)
 
   const [formData, setFormData] = useState({
     run: '',
@@ -77,6 +78,7 @@ export default function Registro() {
   const runLimpio = limpiarRun(formData.run)
   const runFormatoValido = validarRun(formData.run)
   const runEsDuplicado =
+    !guardadoExitoso &&
     runFormatoValido &&
     obtenerUsuarios().some((u) => limpiarRun(u.run) === runLimpio)
   const runValido = runFormatoValido && !runEsDuplicado
@@ -105,8 +107,21 @@ export default function Registro() {
     }
     setTocado(todosTocados)
 
+    const esFormatoRunValido = validarRun(formData.run)
+    const usuariosActuales = obtenerUsuarios()
+    const existeDuplicado =
+      esFormatoRunValido &&
+      usuariosActuales.some((u) => limpiarRun(u.run) === runLimpio)
+
+    if (!esFormatoRunValido || existeDuplicado) {
+      const detalleErrorRun = existeDuplicado
+        ? 'El RUN ingresado ya se encuentra registrado.'
+        : obtenerMensajeErrorRun(formData.run)
+      Swal.fire('RUN inválido', detalleErrorRun, 'error')
+      return
+    }
+
     if (
-      !runValido ||
       !nombreValido ||
       !apellidosValido ||
       !correoValido ||
@@ -133,9 +148,14 @@ export default function Registro() {
       estado: 'Activo'
     }
 
-    const usuarios = obtenerUsuarios()
-    usuarios.push(nuevoUsuario)
-    localStorage.setItem(FORTEPIANO_KEYS.usuarios, JSON.stringify(usuarios))
+    setGuardadoExitoso(true)
+    usuariosActuales.push(nuevoUsuario)
+    localStorage.setItem(FORTEPIANO_KEYS.usuarios, JSON.stringify(usuariosActuales))
+    window.dispatchEvent(
+      new CustomEvent('fortepiano_storage_change', {
+        detail: { clave: FORTEPIANO_KEYS.usuarios }
+      })
+    )
 
     Swal.fire('Correcto', 'Usuario registrado correctamente.', 'success').then(() => {
       navigate('/login')
@@ -155,11 +175,11 @@ export default function Registro() {
               <div className="row g-3">
                 <div className="col-md-6">
                   <Form.Group controlId="runRegistro">
-                    <Form.Label>RUN (con o sin puntos/guión)</Form.Label>
+                    <Form.Label>RUN (con dígito verificador)</Form.Label>
                     <Form.Control
                       type="text"
                       maxLength={12}
-                      placeholder="Ej: 123456785 o 12.345.678-5"
+                      placeholder="Ej: 12345678-5 o 12.345.678-5"
                       value={formData.run}
                       onChange={(e) => handleChange('run', e.target.value)}
                       onBlur={() => handleBlur('run')}

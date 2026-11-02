@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { FORTEPIANO_KEYS } from '../storage/claves'
 import { useColeccion } from '../storage/useColeccion'
 import { Usuario } from '../types'
-import { limpiarRun } from '../utils/validaciones'
+import { limpiarRun, validarRun } from '../utils/validaciones'
 
 /**
  * Hook para consultar y gestionar los usuarios del sistema.
@@ -19,7 +19,10 @@ export function useUsuarios() {
   )
 
   const guardarUsuario = useCallback(
-    (usuario: Usuario) => {
+    (usuario: Usuario): boolean => {
+      if (!validarRun(usuario.run)) {
+        return false
+      }
       guardar((prev) => {
         const runNormalizado = limpiarRun(usuario.run)
         const usuarioNormalizado = { ...usuario, run: runNormalizado }
@@ -31,6 +34,7 @@ export function useUsuarios() {
         }
         return [...prev, usuarioNormalizado]
       })
+      return true
     },
     [guardar]
   )
