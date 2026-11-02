@@ -1,10 +1,15 @@
 import React, { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Breadcrumb } from 'react-bootstrap'
+import { Breadcrumb, Badge } from 'react-bootstrap'
 import { useProductos } from '../hooks/useProductos'
 import { useTablasMaestras } from '../hooks/useTablasMaestras'
 import { useCart } from '../context/CartContext'
-import { formatearPrecio } from '../utils/formato'
+import {
+  formatearPrecio,
+  tieneOfertaActiva,
+  obtenerPrecioEfectivo,
+  obtenerPorcentajeDescuento
+} from '../utils/formato'
 
 export default function ProductoDetalle() {
   const [searchParams] = useSearchParams()
@@ -42,6 +47,10 @@ export default function ProductoDetalle() {
 
   const agotado = producto.stock <= 0
   const esStockCritico = !agotado && producto.stockCritico != null && producto.stock <= producto.stockCritico
+  const enOferta = tieneOfertaActiva(producto)
+  const precioEfectivo = obtenerPrecioEfectivo(producto)
+  const descuento = obtenerPorcentajeDescuento(producto)
+
   const rutaImagen = producto.imagen
     ? producto.imagen.startsWith('/')
       ? producto.imagen
@@ -77,7 +86,15 @@ export default function ProductoDetalle() {
       </Breadcrumb>
 
       <div className="row g-4" id="detalleProducto">
-        <div className="col-md-5">
+        <div className="col-md-5 position-relative">
+          {enOferta && (
+            <Badge
+              bg="danger"
+              className="position-absolute top-0 end-0 m-4 px-3 py-2 fs-6 shadow"
+            >
+              <i className="bi bi-tag-fill me-1"></i>-{descuento}% OFERTA
+            </Badge>
+          )}
           <img
             src={rutaImagen}
             className="img-fluid rounded bg-forte-panel p-3 w-100"
@@ -86,12 +103,37 @@ export default function ProductoDetalle() {
           />
         </div>
         <div className="col-md-7">
-          <span className="badge badge-categoria mb-2">
-            {obtenerNombreCategoria(producto.categoriaId)}
-          </span>
+          <div className="d-flex align-items-center gap-2 mb-2">
+            <span className="badge badge-categoria">
+              {obtenerNombreCategoria(producto.categoriaId)}
+            </span>
+            {enOferta && (
+              <Badge bg="danger">
+                ¡Ahorras {formatearPrecio(producto.precio - precioEfectivo)}!
+              </Badge>
+            )}
+          </div>
           <h1 className="h3">{producto.nombre}</h1>
           <p className="text-muted">{producto.descripcion || 'Sin descripción disponible.'}</p>
-          <p className="display-6 text-accent">{formatearPrecio(producto.precio)}</p>
+
+          {enOferta ? (
+            <div className="my-3">
+              <div className="text-muted">
+                Precio normal: <del>{formatearPrecio(producto.precio)}</del>
+              </div>
+              <div className="d-flex align-items-center gap-3">
+                <span className="display-6 fw-bold text-accent mb-0">
+                  {formatearPrecio(precioEfectivo)}
+                </span>
+                <Badge bg="danger" className="fs-6">
+                  -{descuento}%
+                </Badge>
+              </div>
+            </div>
+          ) : (
+            <p className="display-6 text-accent">{formatearPrecio(producto.precio)}</p>
+          )}
+
           <p className="d-flex align-items-center gap-2">
             {agotado ? (
               <span className="badge bg-danger">Sin stock</span>

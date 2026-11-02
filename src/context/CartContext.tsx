@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useCallback } from
 import Swal from 'sweetalert2'
 import { FORTEPIANO_KEYS } from '../storage/claves'
 import { ItemCarrito, Producto, DatosCheckout, Boleta } from '../types'
-import { formatearPrecio } from '../utils/formato'
+import { formatearPrecio, obtenerPrecioEfectivo } from '../utils/formato'
 import { imprimirBoletaHtml } from '../utils/impresion'
 
 export interface ItemCarritoConDetalle extends ItemCarrito {
@@ -55,7 +55,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const productos = obtenerProductos()
     return carrito.map((item) => {
       const producto = productos.find((p) => p.codigo === item.codigo)
-      const subtotal = producto ? producto.precio * item.cantidad : 0
+      const subtotal = producto ? obtenerPrecioEfectivo(producto) * item.cantidad : 0
       return {
         ...item,
         producto,
@@ -295,7 +295,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const itemsBoleta = itemsConDetalle.map((item) => ({
       codigo: item.codigo,
       nombre: item.producto?.nombre ?? item.codigo,
-      precioUnitario: item.producto?.precio ?? 0,
+      precioUnitario: obtenerPrecioEfectivo(item.producto),
       cantidad: item.cantidad,
       subtotal: item.subtotal
     }))

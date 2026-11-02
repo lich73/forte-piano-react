@@ -8,6 +8,9 @@ export interface Producto {
   categoriaId: number
   imagen: string
   estado: 'Activo' | 'Inactivo'
+  enOferta?: boolean
+  porcentajeDescuento?: number
+  precioOferta?: number | null
 }
 
 export interface Usuario {

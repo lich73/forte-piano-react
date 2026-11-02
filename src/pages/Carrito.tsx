@@ -6,7 +6,12 @@ import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useUsuarios } from '../hooks/useUsuarios'
 import { useTablasMaestras } from '../hooks/useTablasMaestras'
-import { formatearPrecio } from '../utils/formato'
+import {
+  formatearPrecio,
+  tieneOfertaActiva,
+  obtenerPrecioEfectivo,
+  obtenerPorcentajeDescuento
+} from '../utils/formato'
 import {
   limpiarRun,
   validarRun,
@@ -344,7 +349,17 @@ export default function Carrito() {
                           </Link>
                         </h3>
                         <p className="small text-muted mb-0">
-                          {formatearPrecio(prod?.precio ?? 0)} c/u
+                          {tieneOfertaActiva(prod) ? (
+                            <>
+                              <span className="text-accent fw-semibold me-1">
+                                {formatearPrecio(obtenerPrecioEfectivo(prod))} c/u
+                              </span>
+                              <del className="me-1">{formatearPrecio(prod?.precio ?? 0)}</del>
+                              <Badge bg="danger">-{obtenerPorcentajeDescuento(prod)}%</Badge>
+                            </>
+                          ) : (
+                            <>{formatearPrecio(prod?.precio ?? 0)} c/u</>
+                          )}
                         </p>
                       </div>
 

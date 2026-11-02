@@ -1,15 +1,30 @@
-import { useState, useMemo } from 'react'
-import { Form, InputGroup } from 'react-bootstrap'
+import { useState, useMemo, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Form, InputGroup, Button, Badge } from 'react-bootstrap'
 import { useProductos } from '../hooks/useProductos'
 import { useTablasMaestras } from '../hooks/useTablasMaestras'
 import { ProductCard } from '../components/common/ProductCard'
+import { tieneOfertaActiva } from '../utils/formato'
 
 export default function Productos() {
   const { productos } = useProductos()
   const { categorias } = useTablasMaestras()
+  const [searchParams] = useSearchParams()
 
   const [busqueda, setBusqueda] = useState('')
   const [categoriaId, setCategoriaId] = useState('')
+  const [soloOfertas, setSoloOfertas] = useState(() => searchParams.get('ofertas') === '1')
+
+  useEffect(() => {
+    if (searchParams.get('ofertas') === '1') {
+      setSoloOfertas(true)
+    }
+  }, [searchParams])
+
+  const totalEnOferta = useMemo(
+    () => productos.filter((p) => p.estado === 'Activo' && tieneOfertaActiva(p)).length,
+    [productos]
+  )
 
   const productosFiltrados = useMemo(() => {
     let resultado = productos.filter((p) => p.estado === 'Activo')
@@ -24,15 +39,27 @@ export default function Productos() {
       resultado = resultado.filter((p) => p.categoriaId === idNum)
     }
 
+    if (soloOfertas) {
+      resultado = resultado.filter((p) => tieneOfertaActiva(p))
+    }
+
     return resultado
-  }, [productos, busqueda, categoriaId])
+  }, [productos, busqueda, categoriaId, soloOfertas])
 
   return (
     <section className="container py-5">
-      <h1 className="section-title">Catalogo de instrumentos musicales</h1>
+      <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h1 className="section-title mb-0">Catalogo de instrumentos musicales</h1>
+        {totalEnOferta > 0 && (
+          <Badge bg="danger" className="px-3 py-2 fs-6">
+            <i className="bi bi-fire me-1"></i>
+            {totalEnOferta} instrumento(s) en oferta especial
+          </Badge>
+        )}
+      </div>
 
-      <div className="row g-3 mb-4 bg-forte-panel p-3 rounded">
-        <div className="col-md-8">
+      <div className="row g-3 mb-4 bg-forte-panel p-3 rounded align-items-center">
+        <div className="col-md-5">
           <InputGroup className="forte-search-group">
             <InputGroup.Text id="iconoBusqueda">
               <i className="bi bi-search"></i>
@@ -61,6 +88,18 @@ export default function Productos() {
               </option>
             ))}
           </Form.Select>
+        </div>
+        <div className="col-md-3">
+          <Button
+            type="button"
+            id="btnFiltroOfertas"
+            variant={soloOfertas ? 'danger' : 'outline-warning'}
+            className="w-100 d-flex align-items-center justify-content-center gap-2"
+            onClick={() => setSoloOfertas((prev) => !prev)}
+          >
+            <i className="bi bi-tag-fill"></i>
+            {soloOfertas ? 'Viendo solo ofertas' : 'Ver productos en oferta'}
+          </Button>
         </div>
       </div>
 

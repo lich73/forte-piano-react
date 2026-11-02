@@ -7,7 +7,12 @@ import { useAuth } from '../../context/AuthContext'
 import { useTablasMaestras } from '../../hooks/useTablasMaestras'
 import { DataTable, Columna } from '../../components/common/DataTable'
 import { Producto } from '../../types'
-import { formatearPrecio } from '../../utils/formato'
+import {
+  formatearPrecio,
+  tieneOfertaActiva,
+  obtenerPrecioEfectivo,
+  obtenerPorcentajeDescuento
+} from '../../utils/formato'
 import { confirmarAccion, alertaExito } from '../../utils/alertas'
 
 export default function AdminProductos() {
@@ -24,6 +29,10 @@ export default function AdminProductos() {
         : `/img/${producto.imagen}`
       : '/img/logo.png'
 
+    const enOferta = tieneOfertaActiva(producto)
+    const precioFinal = obtenerPrecioEfectivo(producto)
+    const desc = obtenerPorcentajeDescuento(producto)
+
     Swal.fire({
       title: producto.nombre,
       html: `
@@ -31,7 +40,12 @@ export default function AdminProductos() {
         <div class="text-start text-light">
           <p class="mb-1"><strong>Código:</strong> ${producto.codigo}</p>
           <p class="mb-1"><strong>Categoría:</strong> ${obtenerNombreCategoria(producto.categoriaId)}</p>
-          <p class="mb-1"><strong>Precio:</strong> ${formatearPrecio(producto.precio)}</p>
+          <p class="mb-1"><strong>Precio normal:</strong> ${formatearPrecio(producto.precio)}</p>
+          ${
+            enOferta
+              ? `<p class="mb-1 text-warning"><strong>Oferta activa (-${desc}%):</strong> ${formatearPrecio(precioFinal)}</p>`
+              : `<p class="mb-1"><strong>En oferta:</strong> No</p>`
+          }
           <p class="mb-1"><strong>Stock:</strong> ${producto.stock}</p>
           <p class="mb-1"><strong>Stock crítico:</strong> ${producto.stockCritico != null ? producto.stockCritico : '-'}</p>
           <p class="mb-0"><strong>Descripción:</strong> ${producto.descripcion || '-'}</p>
@@ -83,7 +97,17 @@ export default function AdminProductos() {
       },
       {
         encabezado: 'Nombre',
-        render: (p) => p.nombre,
+        render: (p) => (
+          <div>
+            <div>{p.nombre}</div>
+            {tieneOfertaActiva(p) && (
+              <Badge bg="danger" className="mt-1">
+                <i className="bi bi-tag-fill me-1" />
+                Oferta -{obtenerPorcentajeDescuento(p)}%
+              </Badge>
+            )}
+          </div>
+        ),
         ordenarPor: (p) => p.nombre
       },
       {
@@ -93,8 +117,20 @@ export default function AdminProductos() {
       },
       {
         encabezado: 'Precio',
-        render: (p) => formatearPrecio(p.precio),
-        ordenarPor: (p) => p.precio
+        render: (p) => {
+          if (tieneOfertaActiva(p)) {
+            return (
+              <div>
+                <div className="fw-bold text-accent">
+                  {formatearPrecio(obtenerPrecioEfectivo(p))}
+                </div>
+                <del className="text-muted small">{formatearPrecio(p.precio)}</del>
+              </div>
+            )
+          }
+          return formatearPrecio(p.precio)
+        },
+        ordenarPor: (p) => obtenerPrecioEfectivo(p)
       },
       {
         encabezado: 'Stock',
@@ -193,7 +229,8 @@ export default function AdminProductos() {
               p.codigo.toLowerCase().includes(termino) ||
               p.nombre.toLowerCase().includes(termino) ||
               cat.includes(termino) ||
-              p.estado.toLowerCase().includes(termino)
+              p.estado.toLowerCase().includes(termino) ||
+              (tieneOfertaActiva(p) && 'oferta'.includes(termino))
             )
           }}
         />

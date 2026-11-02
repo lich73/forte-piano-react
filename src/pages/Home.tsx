@@ -1,14 +1,18 @@
 import { Link } from 'react-router-dom'
-import { Carousel } from 'react-bootstrap'
+import { Carousel, Badge } from 'react-bootstrap'
 import { useProductos } from '../hooks/useProductos'
 import { useNoticias } from '../hooks/useNoticias'
 import { ProductCard } from '../components/common/ProductCard'
 import { NewsCard } from '../components/common/NewsCard'
+import { tieneOfertaActiva } from '../utils/formato'
 
 export default function Home() {
-  const { destacados } = useProductos()
+  const { productos, destacados } = useProductos()
   const { ultimas } = useNoticias()
 
+  const productosEnOferta = productos
+    .filter((p) => p.estado === 'Activo' && tieneOfertaActiva(p))
+    .slice(0, 4)
   const productosDestacados = destacados(4)
   const ultimasNoticias = ultimas(3)
 
@@ -41,7 +45,7 @@ export default function Home() {
             <Carousel.Caption style={{ left: '15%', textAlign: 'left' }}>
               <h1 className="display-6">Ofertas de Primavera - Hasta un 80% Off!</h1>
               <p className="d-none d-md-block">Precios de Temporada</p>
-              <Link to="/productos" className="btn btn-accent">
+              <Link to="/productos?ofertas=1" className="btn btn-accent">
                 Ver ofertas
               </Link>
             </Carousel.Caption>
@@ -78,6 +82,28 @@ export default function Home() {
           </Carousel.Item>
         </Carousel>
       </section>
+
+      {/* Sección de Ofertas Especiales */}
+      {productosEnOferta.length > 0 && (
+        <section className="container pt-5">
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex align-items-center gap-2">
+              <h2 className="section-title mb-0">Ofertas especiales</h2>
+              <Badge bg="danger">Descuentos activos</Badge>
+            </div>
+            <Link to="/productos?ofertas=1" className="btn btn-outline-accent btn-sm">
+              Ver todas las ofertas <i className="bi bi-arrow-right"></i>
+            </Link>
+          </div>
+          <div className="row g-4" id="ofertasHomeContenedor">
+            {productosEnOferta.map((producto) => (
+              <div key={producto.codigo} className="col-sm-6 col-lg-3">
+                <ProductCard producto={producto} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Sección de Productos Destacados */}
       <section className="container py-5">
