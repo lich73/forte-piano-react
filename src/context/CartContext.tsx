@@ -1,7 +1,14 @@
 import React, { createContext, useContext, useState, useMemo, useCallback } from 'react'
 import Swal from 'sweetalert2'
 import { FORTEPIANO_KEYS } from '../storage/claves'
-import { ItemCarrito, Producto, DatosCheckout, Boleta } from '../types'
+import {
+  ItemCarrito,
+  Producto,
+  DatosCheckout,
+  Boleta,
+  ResultadoPasarela,
+  EstadoPedido
+} from '../types'
 import { formatearPrecio, obtenerPrecioEfectivo } from '../utils/formato'
 import { imprimirBoletaHtml } from '../utils/impresion'
 
@@ -20,9 +27,143 @@ interface CartContextValue {
   eliminar: (codigo: string) => Promise<boolean>
   vaciar: () => void
   finalizarCompra: (datosCheckout?: DatosCheckout) => void
+  procesarPagoPasarela: (
+    datosCheckout: DatosCheckout,
+    resultado: ResultadoPasarela,
+    pedidoExistenteId?: string
+  ) => { exito: boolean; boleta?: Boleta; mensaje: string }
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
+
+export function generarHtmlBoleta(boleta: Boleta): string {
+  const filasHtml = boleta.items
+    .map(
+      (it) => `
+      <tr style="border-bottom: 1px solid #cbd5e1;">
+        <td style="padding: 7px 6px; color: #0f172a !important; font-weight: bold;">${it.cantidad}x</td>
+        <td style="padding: 7px 6px; color: #0f172a !important;">
+          <strong style="color: #0f172a !important; display: block; font-size: 13px;">${it.nombre}</strong>
+          <small style="color: #475569 !important; font-size: 11px;">Código: ${it.codigo}</small>
+        </td>
+        <td style="padding: 7px 6px; text-align: right; font-weight: bold; color: #0f172a !important;">
+          ${formatearPrecio(it.subtotal)}
+        </td>
+      </tr>
+    `
+    )
+    .join('')
+
+  const infoEnvioHtml = boleta.datosEnvio
+    ? `
+      <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 14px; background: #f0fdf4 !important; padding: 10px 12px; border: 1px solid #bbf7d0; border-radius: 6px;">
+        <p style="margin: 0 0 4px 0; color: #166534 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos de Despacho / Entrega</p>
+        <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Modalidad:</strong> ${
+          boleta.datosEnvio.modalidad === 'retiro_tienda'
+            ? 'Retiro en Tienda Forte & Piano'
+            : boleta.datosEnvio.modalidad === 'otra_direccion'
+            ? 'Despacho a domicilio (Dirección alternativa)'
+            : 'Despacho a domicilio (Dirección de perfil)'
+        }</p>
+        <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Destinatario:</strong> ${boleta.datosEnvio.destinatario}${
+          boleta.datosEnvio.telefono ? ` &bull; Tel: ${boleta.datosEnvio.telefono}` : ''
+        }</p>
+        <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Dirección:</strong> ${boleta.datosEnvio.direccion}, ${boleta.datosEnvio.comunaNombre}, ${boleta.datosEnvio.regionNombre}</p>
+        ${
+          boleta.datosEnvio.referencia
+            ? `<p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Indicaciones:</strong> ${boleta.datosEnvio.referencia}</p>`
+            : ''
+        }
+      </div>
+    `
+    : ''
+
+  return `
+    <div id="boletaImprimible" style="text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; color: #0f172a !important; background: #ffffff !important; padding: 18px; border: 1px dashed #94a3b8; border-radius: 8px;">
+      <div style="text-align: center; margin-bottom: 14px; border-bottom: 2px solid #0d233a; padding-bottom: 10px;">
+        <h4 class="boleta-empresa" style="margin: 0; font-size: 18px; color: #0d233a !important; font-weight: 800;">FORTE & PIANO SpA</h4>
+        <p class="boleta-subtitulo" style="margin: 3px 0; font-size: 12px; color: #334155 !important;">R.U.T.: 76.543.210-3 &bull; Venta de Instrumentos Musicales</p>
+        <p class="boleta-subtitulo" style="margin: 2px 0; font-size: 12px; color: #334155 !important;">Av. Providencia 1234, Santiago &bull; contacto@fortepiano.cl</p>
+        <div class="boleta-folio-box" style="display: inline-block; border: 2px solid #0056b3 !important; background: #f0f7ff !important; padding: 6px 16px; margin-top: 8px; border-radius: 4px;">
+          <span style="font-weight: 800; color: #0056b3 !important; font-size: 14px;">BOLETA ELECTRÓNICA N° ${boleta.folio}</span>
+        </div>
+      </div>
+
+      <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 10px; background: #f8fafc !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <p style="margin: 0 0 4px 0; color: #334155 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos del Cliente (Facturación)</p>
+        <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Fecha de emisión:</strong> ${boleta.fecha}</p>
+        <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Cliente:</strong> ${boleta.clienteNombre}</p>
+        ${boleta.clienteRun ? `<p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">R.U.T. Cliente:</strong> ${boleta.clienteRun}</p>` : ''}
+        <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Correo:</strong> ${boleta.clienteCorreo}</p>
+        <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Medio de pago:</strong> ${boleta.metodoPago}</p>
+        <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Estado del pedido:</strong> ${boleta.estado}</p>
+      </div>
+
+      ${infoEnvioHtml}
+
+      <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px;">
+        <thead>
+          <tr style="background: #f1f5f9 !important; border-bottom: 2px solid #94a3b8; text-align: left;">
+            <th style="padding: 7px 6px; color: #0f172a !important; font-weight: 700;">Cant.</th>
+            <th style="padding: 7px 6px; color: #0f172a !important; font-weight: 700;">Descripción</th>
+            <th style="padding: 7px 6px; text-align: right; color: #0f172a !important; font-weight: 700;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${filasHtml}
+        </tbody>
+      </table>
+
+      <div class="boleta-totales" style="border-top: 1px dashed #94a3b8; padding-top: 10px; font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: #1e293b !important;">Subtotal Neto:</span>
+          <span style="color: #0f172a !important; font-weight: 600;">${formatearPrecio(boleta.subtotalNeto)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+          <span style="color: #1e293b !important;">19% I.V.A.:</span>
+          <span style="color: #0f172a !important; font-weight: 600;">${formatearPrecio(boleta.iva)}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; border-top: 2px solid #0d233a; padding-top: 8px; margin-top: 6px;">
+          <span style="color: #0d233a !important;">TOTAL PAGADO:</span>
+          <span class="boleta-total-pagado" style="color: #0056b3 !important; font-size: 17px; font-weight: 800;">${formatearPrecio(boleta.total)}</span>
+        </div>
+      </div>
+
+      <p class="boleta-footer-aviso" style="text-align: center; font-size: 11px; color: #475569 !important; margin: 14px 0 0 0;">
+        El IVA de esta boleta ha sido retenido según normativa vigente del SII.<br/>
+        ¡Gracias por tu compra en Forte & Piano!
+      </p>
+    </div>
+  `
+}
+
+export function mostrarModalBoletaEmitida(boleta: Boleta) {
+  const boletaHtml = generarHtmlBoleta(boleta)
+  Swal.fire({
+    title: '¡Pago Exitoso! Pedido Confirmado',
+    html: boletaHtml,
+    icon: 'success',
+    width: '600px',
+    showCancelButton: true,
+    confirmButtonText: '<i class="bi bi-printer"></i> Imprimir Boleta',
+    cancelButtonText: 'Aceptar',
+    confirmButtonColor: '#0056b3',
+    willClose: () => {
+      document.body.classList.remove('swal2-shown', 'swal2-height-auto')
+      document.body.style.overflow = ''
+    },
+    didClose: () => {
+      document.body.classList.remove('swal2-shown', 'swal2-height-auto')
+      document.body.style.overflow = ''
+    }
+  }).then((swalRes) => {
+    if (swalRes.isConfirmed) {
+      setTimeout(() => {
+        imprimirBoletaHtml(boletaHtml, boleta.folio)
+      }, 150)
+    }
+  })
+}
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [carrito, setCarrito] = useState<ItemCarrito[]>(() => {
@@ -191,87 +332,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     guardarCarrito([])
   }
 
-  // Finaliza la compra con confirmación, descuento de stock y emisión de boleta instantánea
-  const finalizarCompra = async (datosCheckout?: DatosCheckout) => {
-    if (carrito.length === 0) return
+  // Procesa un escenario simulado de la pasarela de pagos y actualiza el estado del pedido
+  const procesarPagoPasarela = (
+    datosCheckout: DatosCheckout,
+    resultado: ResultadoPasarela,
+    pedidoExistenteId?: string
+  ): { exito: boolean; boleta?: Boleta; mensaje: string } => {
+    if (carrito.length === 0) {
+      return { exito: false, mensaje: 'El carrito se encuentra vacío.' }
+    }
 
-    // 1. Validar disponibilidad de stock en tiempo real
+    // 1. Validar stock en tiempo real
     const productosActuales = obtenerProductos()
     for (const item of carrito) {
       const prod = productosActuales.find((p) => p.codigo === item.codigo)
       if (!prod || prod.stock < item.cantidad) {
-        Swal.fire({
-          title: 'Stock insuficiente',
-          text: `No hay suficiente stock de "${prod?.nombre ?? item.codigo}". Disponible: ${prod?.stock ?? 0} unidades.`,
-          icon: 'error',
-          confirmButtonText: 'Aceptar'
-        })
-        return
-      }
-    }
-
-    const resumenDespacho = datosCheckout?.datosEnvio
-      ? `<div class="mt-2 p-2 rounded text-start small" style="background: rgba(255,255,255,0.06);">
-           <div><strong>Entrega:</strong> ${
-             datosCheckout.datosEnvio.modalidad === 'retiro_tienda'
-               ? 'Retiro en Tienda Forte & Piano'
-               : datosCheckout.datosEnvio.modalidad === 'otra_direccion'
-               ? 'Despacho a dirección alternativa'
-               : 'Despacho a dirección de perfil'
-           }</div>
-           <div><strong>Destino:</strong> ${datosCheckout.datosEnvio.direccion}, ${datosCheckout.datosEnvio.comunaNombre} (${datosCheckout.datosEnvio.regionNombre})</div>
-           <div><strong>Recibe:</strong> ${datosCheckout.datosEnvio.destinatario}</div>
-         </div>`
-      : ''
-
-    // 2. Pedir confirmación de pago
-    const resultado = await Swal.fire({
-      title: 'Confirmar pago',
-      html: `
-        <p class="mb-2">¿Deseas concretar el pago y emitir la boleta?</p>
-        <p class="fs-4 fw-bold text-accent mb-1">Total: ${formatearPrecio(total)}</p>
-        <small class="text-muted d-block">Método: ${datosCheckout?.metodoPago ?? 'Webpay Plus / Tarjeta de Débito'}</small>
-        ${resumenDespacho}
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, pagar ahora',
-      cancelButtonText: 'Cancelar'
-    })
-
-    if (!resultado.isConfirmed) return
-
-    // 3. Descontar stock en tiempo real en localStorage
-    const productosActualizados = productosActuales.map((p) => {
-      const itemEnCarrito = carrito.find((i) => i.codigo === p.codigo)
-      if (itemEnCarrito) {
         return {
-          ...p,
-          stock: Math.max(0, p.stock - itemEnCarrito.cantidad)
+          exito: false,
+          mensaje: `Stock insuficiente para "${prod?.nombre ?? item.codigo}". Disponible: ${prod?.stock ?? 0}.`
         }
       }
-      return p
-    })
-
-    localStorage.setItem(FORTEPIANO_KEYS.productos, JSON.stringify(productosActualizados))
-    window.dispatchEvent(
-      new CustomEvent('fortepiano_storage_change', {
-        detail: { clave: FORTEPIANO_KEYS.productos }
-      })
-    )
-
-    // 4. Obtener datos de la sesión actual si el usuario está logueado
-    let sesionActual: { run?: string; nombre?: string; apellidos?: string; correo?: string } | null = null
-    try {
-      const sesionRaw = localStorage.getItem(FORTEPIANO_KEYS.sesion)
-      if (sesionRaw) {
-        sesionActual = JSON.parse(sesionRaw)
-      }
-    } catch {
-      sesionActual = null
     }
 
-    // 5. Generar la Boleta Electrónica
+    // 2. Determinar estado del pedido y mensaje según escenario seleccionado
+    let nuevoEstado: EstadoPedido = 'Emitida'
+    let mensajeResultado = 'El pago ha sido aprobado y tu boleta electrónica fue emitida con éxito.'
+
+    if (resultado === 'rechazado') {
+      nuevoEstado = 'Rechazada'
+      mensajeResultado =
+        'La entidad emisora rechazó el cargo (fondos insuficientes o límite excedido). La transacción no pudo completarse.'
+    } else if (resultado === 'intentar_mas_tarde') {
+      nuevoEstado = 'Pendiente'
+      mensajeResultado =
+        'El servicio de autorización bancaria presenta intermitencia temporal. Tu pedido quedó en estado Pendiente para que puedas reintentar el pago.'
+    }
+
+    // 3. Cargar boletas existentes
     let boletasGuardadas: Boleta[] = []
     try {
       const boletasRaw = localStorage.getItem(FORTEPIANO_KEYS.boletas)
@@ -282,8 +379,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       boletasGuardadas = []
     }
 
-    const ultimoFolio = boletasGuardadas.reduce((max, b) => (b.folio > max ? b.folio : max), 1000)
-    const nuevoFolio = ultimoFolio + 1
     const subtotalNeto = Math.round(total / 1.19)
     const iva = total - subtotalNeto
     const ahora = new Date()
@@ -300,29 +395,61 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       subtotal: item.subtotal
     }))
 
-    const clienteNombreFinal = datosCheckout
-      ? `${datosCheckout.clienteNombre} ${datosCheckout.clienteApellidos}`.trim()
-      : sesionActual
-      ? `${sesionActual.nombre ?? ''} ${sesionActual.apellidos ?? ''}`.trim()
-      : 'Cliente General'
+    const clienteNombreFinal =
+      `${datosCheckout.clienteNombre} ${datosCheckout.clienteApellidos}`.trim() ||
+      'Cliente General'
 
-    const nuevaBoleta: Boleta = {
-      id: `BOL-${Date.now()}-${nuevoFolio}`,
-      folio: nuevoFolio,
-      fecha: fechaLegible,
-      clienteRun: datosCheckout?.clienteRun || sesionActual?.run,
-      clienteNombre: clienteNombreFinal || 'Cliente General',
-      clienteCorreo: datosCheckout?.clienteCorreo || sesionActual?.correo || 'cliente@fortepiano.cl',
-      items: itemsBoleta,
-      subtotalNeto,
-      iva,
-      total,
-      metodoPago: datosCheckout?.metodoPago || 'Webpay Plus / Débito',
-      estado: 'Emitida',
-      datosEnvio: datosCheckout?.datosEnvio
+    let boletaResultante: Boleta
+    let nuevasBoletas: Boleta[]
+
+    const indiceExistente = pedidoExistenteId
+      ? boletasGuardadas.findIndex((b) => b.id === pedidoExistenteId)
+      : -1
+
+    if (indiceExistente >= 0) {
+      boletaResultante = {
+        ...boletasGuardadas[indiceExistente],
+        fecha: fechaLegible,
+        clienteRun: datosCheckout.clienteRun,
+        clienteNombre: clienteNombreFinal,
+        clienteCorreo: datosCheckout.clienteCorreo,
+        items: itemsBoleta,
+        subtotalNeto,
+        iva,
+        total,
+        metodoPago: datosCheckout.metodoPago || 'Webpay Plus / Débito',
+        estado: nuevoEstado,
+        datosEnvio: datosCheckout.datosEnvio,
+        mensajeTransaccion: mensajeResultado
+      }
+      nuevasBoletas = [...boletasGuardadas]
+      nuevasBoletas[indiceExistente] = boletaResultante
+    } else {
+      const ultimoFolio = boletasGuardadas.reduce(
+        (max, b) => (b.folio > max ? b.folio : max),
+        1000
+      )
+      const nuevoFolio = ultimoFolio + 1
+
+      boletaResultante = {
+        id: `BOL-${Date.now()}-${nuevoFolio}`,
+        folio: nuevoFolio,
+        fecha: fechaLegible,
+        clienteRun: datosCheckout.clienteRun,
+        clienteNombre: clienteNombreFinal,
+        clienteCorreo: datosCheckout.clienteCorreo,
+        items: itemsBoleta,
+        subtotalNeto,
+        iva,
+        total,
+        metodoPago: datosCheckout.metodoPago || 'Webpay Plus / Débito',
+        estado: nuevoEstado,
+        datosEnvio: datosCheckout.datosEnvio,
+        mensajeTransaccion: mensajeResultado
+      }
+      nuevasBoletas = [boletaResultante, ...boletasGuardadas]
     }
 
-    const nuevasBoletas = [nuevaBoleta, ...boletasGuardadas]
     localStorage.setItem(FORTEPIANO_KEYS.boletas, JSON.stringify(nuevasBoletas))
     window.dispatchEvent(
       new CustomEvent('fortepiano_storage_change', {
@@ -330,133 +457,72 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       })
     )
 
-    // 6. Vaciar carrito de compras
-    guardarCarrito([])
-
-    // 7. Preparar HTML de la boleta para visualización instantánea
-    const filasHtml = itemsBoleta
-      .map(
-        (it) => `
-        <tr style="border-bottom: 1px solid #cbd5e1;">
-          <td style="padding: 7px 6px; color: #0f172a !important; font-weight: bold;">${it.cantidad}x</td>
-          <td style="padding: 7px 6px; color: #0f172a !important;">
-            <strong style="color: #0f172a !important; display: block; font-size: 13px;">${it.nombre}</strong>
-            <small style="color: #475569 !important; font-size: 11px;">Código: ${it.codigo}</small>
-          </td>
-          <td style="padding: 7px 6px; text-align: right; font-weight: bold; color: #0f172a !important;">
-            ${formatearPrecio(it.subtotal)}
-          </td>
-        </tr>
-      `
-      )
-      .join('')
-
-    const infoEnvioHtml = nuevaBoleta.datosEnvio
-      ? `
-        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 14px; background: #f0fdf4 !important; padding: 10px 12px; border: 1px solid #bbf7d0; border-radius: 6px;">
-          <p style="margin: 0 0 4px 0; color: #166534 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos de Despacho / Entrega</p>
-          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Modalidad:</strong> ${
-            nuevaBoleta.datosEnvio.modalidad === 'retiro_tienda'
-              ? 'Retiro en Tienda Forte & Piano'
-              : nuevaBoleta.datosEnvio.modalidad === 'otra_direccion'
-              ? 'Despacho a domicilio (Dirección alternativa)'
-              : 'Despacho a domicilio (Dirección de perfil)'
-          }</p>
-          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Destinatario:</strong> ${nuevaBoleta.datosEnvio.destinatario}${
-            nuevaBoleta.datosEnvio.telefono ? ` &bull; Tel: ${nuevaBoleta.datosEnvio.telefono}` : ''
-          }</p>
-          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Dirección:</strong> ${nuevaBoleta.datosEnvio.direccion}, ${nuevaBoleta.datosEnvio.comunaNombre}, ${nuevaBoleta.datosEnvio.regionNombre}</p>
-          ${
-            nuevaBoleta.datosEnvio.referencia
-              ? `<p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Indicaciones:</strong> ${nuevaBoleta.datosEnvio.referencia}</p>`
-              : ''
+    // 4. Si el pago fue exitoso, descontar stock y vaciar carrito
+    if (resultado === 'exitoso') {
+      const productosActualizados = productosActuales.map((p) => {
+        const itemEnCarrito = carrito.find((i) => i.codigo === p.codigo)
+        if (itemEnCarrito) {
+          return {
+            ...p,
+            stock: Math.max(0, p.stock - itemEnCarrito.cantidad)
           }
-        </div>
-      `
-      : ''
+        }
+        return p
+      })
 
-    const boletaHtml = `
-      <div id="boletaImprimible" style="text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; color: #0f172a !important; background: #ffffff !important; padding: 18px; border: 1px dashed #94a3b8; border-radius: 8px;">
-        <div style="text-align: center; margin-bottom: 14px; border-bottom: 2px solid #0d233a; padding-bottom: 10px;">
-          <h4 class="boleta-empresa" style="margin: 0; font-size: 18px; color: #0d233a !important; font-weight: 800;">FORTE & PIANO SpA</h4>
-          <p class="boleta-subtitulo" style="margin: 3px 0; font-size: 12px; color: #334155 !important;">R.U.T.: 76.543.210-3 &bull; Venta de Instrumentos Musicales</p>
-          <p class="boleta-subtitulo" style="margin: 2px 0; font-size: 12px; color: #334155 !important;">Av. Providencia 1234, Santiago &bull; contacto@fortepiano.cl</p>
-          <div class="boleta-folio-box" style="display: inline-block; border: 2px solid #0056b3 !important; background: #f0f7ff !important; padding: 6px 16px; margin-top: 8px; border-radius: 4px;">
-            <span style="font-weight: 800; color: #0056b3 !important; font-size: 14px;">BOLETA ELECTRÓNICA N° ${nuevaBoleta.folio}</span>
-          </div>
-        </div>
+      localStorage.setItem(FORTEPIANO_KEYS.productos, JSON.stringify(productosActualizados))
+      window.dispatchEvent(
+        new CustomEvent('fortepiano_storage_change', {
+          detail: { clave: FORTEPIANO_KEYS.productos }
+        })
+      )
 
-        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 10px; background: #f8fafc !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
-          <p style="margin: 0 0 4px 0; color: #334155 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos del Cliente (Facturación)</p>
-          <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Fecha de emisión:</strong> ${nuevaBoleta.fecha}</p>
-          <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Cliente:</strong> ${nuevaBoleta.clienteNombre}</p>
-          ${nuevaBoleta.clienteRun ? `<p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">R.U.T. Cliente:</strong> ${nuevaBoleta.clienteRun}</p>` : ''}
-          <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Correo:</strong> ${nuevaBoleta.clienteCorreo}</p>
-          <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Medio de pago:</strong> ${nuevaBoleta.metodoPago}</p>
-        </div>
+      guardarCarrito([])
+    }
 
-        ${infoEnvioHtml}
+    return {
+      exito: resultado === 'exitoso',
+      boleta: boletaResultante,
+      mensaje: mensajeResultado
+    }
+  }
 
-        <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px;">
-          <thead>
-            <tr style="background: #f1f5f9 !important; border-bottom: 2px solid #94a3b8; text-align: left;">
-              <th style="padding: 7px 6px; color: #0f172a !important; font-weight: 700;">Cant.</th>
-              <th style="padding: 7px 6px; color: #0f172a !important; font-weight: 700;">Descripción</th>
-              <th style="padding: 7px 6px; text-align: right; color: #0f172a !important; font-weight: 700;">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filasHtml}
-          </tbody>
-        </table>
+  // Función directa de compatibilidad
+  const finalizarCompra = async (datosCheckout?: DatosCheckout) => {
+    if (carrito.length === 0) return
 
-        <div class="boleta-totales" style="border-top: 1px dashed #94a3b8; padding-top: 10px; font-size: 13px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: #1e293b !important;">Subtotal Neto:</span>
-            <span style="color: #0f172a !important; font-weight: 600;">${formatearPrecio(nuevaBoleta.subtotalNeto)}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: #1e293b !important;">19% I.V.A.:</span>
-            <span style="color: #0f172a !important; font-weight: 600;">${formatearPrecio(nuevaBoleta.iva)}</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; font-size: 16px; font-weight: 800; border-top: 2px solid #0d233a; padding-top: 8px; margin-top: 6px;">
-            <span style="color: #0d233a !important;">TOTAL PAGADO:</span>
-            <span class="boleta-total-pagado" style="color: #0056b3 !important; font-size: 17px; font-weight: 800;">${formatearPrecio(nuevaBoleta.total)}</span>
-          </div>
-        </div>
+    let sesionActual: { run?: string; nombre?: string; apellidos?: string; correo?: string } | null = null
+    try {
+      const sesionRaw = localStorage.getItem(FORTEPIANO_KEYS.sesion)
+      if (sesionRaw) sesionActual = JSON.parse(sesionRaw)
+    } catch {
+      sesionActual = null
+    }
 
-        <p class="boleta-footer-aviso" style="text-align: center; font-size: 11px; color: #475569 !important; margin: 14px 0 0 0;">
-          El IVA de esta boleta ha sido retenido según normativa vigente del SII.<br/>
-          ¡Gracias por tu compra en Forte & Piano!
-        </p>
-      </div>
-    `
-
-    // 8. Mostrar la boleta al instante con opción de impresión limpia
-    Swal.fire({
-      title: '¡Pago Exitoso!',
-      html: boletaHtml,
-      icon: 'success',
-      width: '600px',
-      showCancelButton: true,
-      confirmButtonText: '<i class="bi bi-printer"></i> Imprimir Boleta',
-      cancelButtonText: 'Aceptar',
-      confirmButtonColor: '#0056b3',
-      willClose: () => {
-        document.body.classList.remove('swal2-shown', 'swal2-height-auto')
-        document.body.style.overflow = ''
-      },
-      didClose: () => {
-        document.body.classList.remove('swal2-shown', 'swal2-height-auto')
-        document.body.style.overflow = ''
+    const checkoutEfectivo: DatosCheckout = datosCheckout || {
+      clienteRun: sesionActual?.run || '123456785',
+      clienteNombre: sesionActual?.nombre || 'Cliente',
+      clienteApellidos: sesionActual?.apellidos || 'General',
+      clienteCorreo: sesionActual?.correo || 'cliente@gmail.com',
+      metodoPago: 'Webpay Plus / Tarjeta de Débito',
+      datosEnvio: {
+        modalidad: 'retiro_tienda',
+        destinatario: sesionActual?.nombre || 'Cliente General',
+        regionNombre: 'Región Metropolitana',
+        comunaNombre: 'Providencia',
+        direccion: 'Av. Providencia 1234'
       }
-    }).then((swalRes) => {
-      if (swalRes.isConfirmed) {
-        setTimeout(() => {
-          imprimirBoletaHtml(boletaHtml, nuevaBoleta.folio)
-        }, 150)
-      }
-    })
+    }
+
+    const res = procesarPagoPasarela(
+      checkoutEfectivo,
+      checkoutEfectivo.resultadoTransaccion || 'exitoso',
+      checkoutEfectivo.boletaExistenteId
+    )
+
+    if (res.exito && res.boleta) {
+      mostrarModalBoletaEmitida(res.boleta)
+    }
   }
 
   return (
@@ -470,7 +536,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         cambiarCantidad,
         eliminar,
         vaciar,
-        finalizarCompra
+        finalizarCompra,
+        procesarPagoPasarela
       }}
     >
       {children}

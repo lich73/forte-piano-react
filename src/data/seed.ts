@@ -1,5 +1,5 @@
 import { FORTEPIANO_KEYS } from '../storage/claves'
-import { Rol, Categoria, Region, Comuna, Usuario, Producto, Noticia } from '../types'
+import { Rol, Categoria, Region, Comuna, Usuario, Producto, Noticia, Boleta } from '../types'
 
 export const ROLES_INICIALES: Rol[] = [
   { id: 1, nombre: 'Administrador' },
@@ -297,5 +297,176 @@ export function inicializarDatos(): void {
   }
   if (!localStorage.getItem(FORTEPIANO_KEYS.contactos)) {
     localStorage.setItem(FORTEPIANO_KEYS.contactos, JSON.stringify([]))
+  }
+  const rawBoletas = localStorage.getItem(FORTEPIANO_KEYS.boletas)
+  if (!rawBoletas || rawBoletas === '[]') {
+    localStorage.setItem(FORTEPIANO_KEYS.boletas, JSON.stringify(BOLETAS_INICIALES))
+  }
+}
+
+export const BOLETAS_INICIALES: Boleta[] = [
+  {
+    id: 'BOL-SEED-1001',
+    folio: 1001,
+    fecha: '28-10-2026, 11:15:00',
+    clienteRun: '112223339',
+    clienteNombre: 'Camila Soto Perez',
+    clienteCorreo: 'camila@gmail.com',
+    items: [
+      {
+        codigo: 'PD-001',
+        nombre: 'Yamaha P-45 Negro',
+        precioUnitario: 390990,
+        cantidad: 2,
+        subtotal: 781980
+      },
+      {
+        codigo: 'AD-003',
+        nombre: 'Pedal de Sustain SP-34',
+        precioUnitario: 15000,
+        cantidad: 2,
+        subtotal: 30000
+      }
+    ],
+    subtotalNeto: 682336,
+    iva: 129644,
+    total: 811980,
+    metodoPago: 'Webpay Plus / Tarjeta de Débito',
+    estado: 'Emitida',
+    datosEnvio: {
+      modalidad: 'perfil',
+      destinatario: 'Camila Soto Perez',
+      regionId: 2,
+      regionNombre: 'Valparaiso',
+      comunaId: 4,
+      comunaNombre: 'Valparaiso',
+      direccion: 'Los Aromos 789'
+    }
+  },
+  {
+    id: 'BOL-SEED-1002',
+    folio: 1002,
+    fecha: '29-10-2026, 15:40:00',
+    clienteRun: '201113334',
+    clienteNombre: 'Diego Fernandez Rojas',
+    clienteCorreo: 'diego@duoc.cl',
+    items: [
+      {
+        codigo: 'PD-006',
+        nombre: 'Yamaha Arius YDP-146 Rosewood',
+        precioUnitario: 699990,
+        cantidad: 1,
+        subtotal: 699990
+      },
+      {
+        codigo: 'AC-005',
+        nombre: 'Soporte de Teclado Doble',
+        precioUnitario: 17990,
+        cantidad: 3,
+        subtotal: 53970
+      }
+    ],
+    subtotalNeto: 633580,
+    iva: 120380,
+    total: 753960,
+    metodoPago: 'Webpay Plus / Tarjeta de Crédito',
+    estado: 'Emitida',
+    datosEnvio: {
+      modalidad: 'otra_direccion',
+      destinatario: 'Diego Fernandez Rojas',
+      regionId: 3,
+      regionNombre: 'Biobio',
+      comunaId: 6,
+      comunaNombre: 'Concepcion',
+      direccion: 'Av. Chacabuco 940, Depto 402'
+    }
+  },
+  {
+    id: 'BOL-SEED-1003',
+    folio: 1003,
+    fecha: '30-10-2026, 18:05:00',
+    clienteRun: '112223339',
+    clienteNombre: 'Camila Soto Perez',
+    clienteCorreo: 'camila@gmail.com',
+    items: [
+      {
+        codigo: 'SY-001',
+        nombre: 'Nord Electro 6D 61',
+        precioUnitario: 1709990,
+        cantidad: 1,
+        subtotal: 1709990
+      }
+    ],
+    subtotalNeto: 1436966,
+    iva: 273024,
+    total: 1709990,
+    metodoPago: 'Webpay Plus / Tarjeta de Crédito',
+    estado: 'Pendiente',
+    mensajeTransaccion: 'Problema temporal de conexión bancaria. Pendiente de reintento.',
+    datosEnvio: {
+      modalidad: 'retiro_tienda',
+      destinatario: 'Camila Soto Perez',
+      regionNombre: 'Región Metropolitana',
+      comunaNombre: 'Providencia',
+      direccion: 'Casa Matriz Forte & Piano - Av. Providencia 1234'
+    }
+  },
+  {
+    id: 'BOL-SEED-1004',
+    folio: 1004,
+    fecha: '31-10-2026, 10:20:00',
+    clienteRun: '201113334',
+    clienteNombre: 'Diego Fernandez Rojas',
+    clienteCorreo: 'diego@duoc.cl',
+    items: [
+      {
+        codigo: 'PD-002',
+        nombre: 'Donner DDP-80 Digital Piano',
+        precioUnitario: 527990,
+        cantidad: 1,
+        subtotal: 527990
+      }
+    ],
+    subtotalNeto: 443689,
+    iva: 84301,
+    total: 527990,
+    metodoPago: 'Webpay Plus / Tarjeta de Débito',
+    estado: 'Rechazada',
+    mensajeTransaccion: 'La transacción fue rechazada por la entidad bancaria.'
+  },
+  {
+    id: 'BOL-SEED-1005',
+    folio: 1005,
+    fecha: '01-11-2026, 14:12:00',
+    clienteRun: '112223339',
+    clienteNombre: 'Camila Soto Perez',
+    clienteCorreo: 'camila@gmail.com',
+    items: [
+      {
+        codigo: 'PA-001',
+        nombre: 'Piano Yamaha B1',
+        precioUnitario: 3299000,
+        cantidad: 1,
+        subtotal: 3299000
+      }
+    ],
+    subtotalNeto: 2772269,
+    iva: 526731,
+    total: 3299000,
+    metodoPago: 'Transferencia Bancaria Electrónica',
+    estado: 'Emitida',
+    datosEnvio: {
+      modalidad: 'perfil',
+      destinatario: 'Camila Soto Perez',
+      regionId: 2,
+      regionNombre: 'Valparaiso',
+      comunaId: 4,
+      comunaNombre: 'Valparaiso',
+      direccion: 'Los Aromos 789'
+    }
+  }
+]
+export function _noop() {
+  if (false) {
   }
 }

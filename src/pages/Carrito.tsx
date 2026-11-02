@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Form, Row, Col, Card, Badge, Button, Alert } from 'react-bootstrap'
 import Swal from 'sweetalert2'
-import { useCart } from '../context/CartContext'
+import { useCart, mostrarModalBoletaEmitida } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useUsuarios } from '../hooks/useUsuarios'
 import { useTablasMaestras } from '../hooks/useTablasMaestras'
+import { PasarelaPagoModal } from '../components/common/PasarelaPagoModal'
 import {
   formatearPrecio,
   tieneOfertaActiva,
@@ -19,10 +20,17 @@ import {
   validarCorreo,
   textoRequerido
 } from '../utils/validaciones'
-import { ModalidadEntrega, DatosCheckout } from '../types'
+import { ModalidadEntrega, DatosCheckout, ResultadoPasarela } from '../types'
 
 export default function Carrito() {
-  const { itemsConDetalle, total, cambiarCantidad, eliminar, vaciar, finalizarCompra } = useCart()
+  const {
+    itemsConDetalle,
+    total,
+    cambiarCantidad,
+    eliminar,
+    vaciar,
+    procesarPagoPasarela
+  } = useCart()
   const { sesion, actualizarPerfil } = useAuth()
   const { obtenerUsuarioPorRun } = useUsuarios()
   const {
@@ -53,6 +61,11 @@ export default function Carrito() {
   const [envioDireccion, setEnvioDireccion] = useState('')
   const [envioReferencia, setEnvioReferencia] = useState('')
   const [metodoPago, setMetodoPago] = useState('Webpay Plus / Tarjeta de Débito')
+
+  // 3. Estado de la ventana de Pasarela de Pago Simulada
+  const [mostrarPasarela, setMostrarPasarela] = useState(false)
+  const [datosCheckoutPreparados, setDatosCheckoutPreparados] =
+    useState<DatosCheckout | null>(null)
 
   const [tocado, setTocado] = useState<Record<string, boolean>>({})
 
@@ -143,7 +156,7 @@ export default function Carrito() {
     }
   }
 
-  const handleProcederCompra = () => {
+  const handleAbrirPasarelaPago = () => {
     setTocado({
       clienteRun: true,
       clienteNombre: true,
@@ -188,7 +201,6 @@ export default function Carrito() {
       return
     }
 
-    // Construir objeto de despacho diferenciado de los datos del perfil
     let datosEnvioFinal: DatosCheckout['datosEnvio']
 
     if (modalidadEntrega === 'retiro_tienda') {
@@ -227,7 +239,6 @@ export default function Carrito() {
       }
     }
 
-    // Si el usuario autenticado dejó abierta la edición de su perfil, sincronizarla también
     if (sesion && editandoPerfil) {
       actualizarPerfil({
         nombre: clienteNombre,
@@ -240,14 +251,41 @@ export default function Carrito() {
       setEditandoPerfil(false)
     }
 
-    finalizarCompra({
+    const checkoutData: DatosCheckout = {
       clienteRun: limpiarRun(clienteRun),
       clienteNombre: clienteNombre.trim(),
       clienteApellidos: clienteApellidos.trim(),
       clienteCorreo: clienteCorreo.trim(),
       metodoPago,
       datosEnvio: datosEnvioFinal
-    })
+    }
+
+    setDatosCheckoutPreparados(checkoutData)
+    setMostrarPasarela(true)
+  }
+
+  const handleResultadoPasarela = (
+    resultado: ResultadoPasarela,
+    pedidoActualId?: string
+  ) => {
+    if (!datosCheckoutPreparados) {
+      return { exito: false, mensaje: 'No hay datos de checkout preparados.' }
+    }
+
+    const respuesta = procesarPagoPasarela(
+      datosCheckoutPreparados,
+      resultado,
+      pedidoActualId
+    )
+
+    if (respuesta.exito && respuesta.boleta) {
+      setMostrarPasarela(false)
+      setTimeout(() => {
+        mostrarModalBoletaEmitida(respuesta.boleta!)
+      }, 150)
+    }
+
+    return respuesta
   }
 
   const handleVaciar = () => {
@@ -278,9 +316,14 @@ export default function Carrito() {
         <div id="carritoVacio" className="text-center py-5">
           <i className="bi bi-cart-x display-1 text-muted"></i>
           <p className="text-muted mt-3">Tu carrito esta vacio.</p>
-          <Link to="/productos" className="btn btn-accent">
-            Ver catalogo
-          </Link>
+          <div className="d-flex justify-content-center gap-2 mt-3">
+            <Link to="/productos" className="btn btn-accent">
+              Ver catalogo
+            </Link>
+            <Link to="/mis-boletas" className="btn btn-outline-light">
+              Ver mis pedidos / boletas
+            </Link>
+          </div>
         </div>
       </section>
     )
@@ -871,7 +914,7 @@ export default function Carrito() {
           </Card>
         </div>
 
-        {/* Columna derecha: Resumen del pedido y Pago */}
+        {/* Columna derecha: Resumen del pedido y Pasarela de Pago */}
         <div className="col-lg-4">
           <div id="carritoResumen" className="bg-forte-panel rounded p-4 border border-secondary sticky-top" style={{ top: '90px' }}>
             <h3 className="h5 mb-3">Resumen de Compra</h3>
@@ -915,9 +958,9 @@ export default function Carrito() {
               type="button"
               id="btnFinalizarCompra"
               className="btn btn-accent w-100 mb-2 py-2 fw-semibold"
-              onClick={handleProcederCompra}
+              onClick={handleAbrirPasarelaPago}
             >
-              <i className="bi bi-credit-card me-2"></i>Finalizar compra
+              <i className="bi bi-shield-lock me-2"></i>Ir a Pasarela de Pago
             </button>
             <button
               type="button"
@@ -929,6 +972,15 @@ export default function Carrito() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Pasarela de Pago Simulada */}
+      <PasarelaPagoModal
+        show={mostrarPasarela}
+        onHide={() => setMostrarPasarela(false)}
+        total={total}
+        datosCheckout={datosCheckoutPreparados}
+        onProcesarResultado={handleResultadoPasarela}
+      />
     </section>
   )
 }
