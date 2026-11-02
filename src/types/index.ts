@@ -100,6 +100,10 @@ export interface DatosEnvio {
   referencia?: string
 }
 
+export type ResultadoPasarela = 'exitoso' | 'rechazado' | 'intentar_mas_tarde'
+
+export type EstadoPedido = 'Emitida' | 'Pendiente' | 'Rechazada' | 'Anulada'
+
 export interface DatosCheckout {
   clienteRun: string
   clienteNombre: string
@@ -107,6 +111,8 @@ export interface DatosCheckout {
   clienteCorreo: string
   metodoPago?: string
   datosEnvio: DatosEnvio
+  resultadoTransaccion?: ResultadoPasarela
+  boletaExistenteId?: string
 }
 
 export interface Boleta {
@@ -121,6 +127,7 @@ export interface Boleta {
   iva: number
   total: number
   metodoPago: string
-  estado: 'Emitida' | 'Anulada'
+  estado: EstadoPedido
   datosEnvio?: DatosEnvio
+  mensajeTransaccion?: string
 }
