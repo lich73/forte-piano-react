@@ -5,7 +5,9 @@ import { useUsuarios } from '../../hooks/useUsuarios'
 import { useTablasMaestras } from '../../hooks/useTablasMaestras'
 import { Usuario } from '../../types'
 import {
+  limpiarRun,
   validarRun,
+  obtenerMensajeErrorRun,
   validarCorreo,
   validarPassword,
   textoRequerido
@@ -74,13 +76,16 @@ export default function AdminUsuarioForm() {
   const comunasDisponibles = regionId ? obtenerComunasPorRegion(regionId) : []
 
   // Validaciones
-  const runValido =
-    validarRun(run) &&
-    !usuarios.some(
+  const runLimpio = limpiarRun(run)
+  const runFormatoValido = validarRun(run)
+  const runEsDuplicado =
+    runFormatoValido &&
+    usuarios.some(
       (u) =>
-        u.run.toUpperCase().trim() === run.toUpperCase().trim() &&
-        u.run.toUpperCase().trim() !== runParam?.toUpperCase().trim()
+        limpiarRun(u.run) === runLimpio &&
+        limpiarRun(u.run) !== limpiarRun(runParam || '')
     )
+  const runValido = runFormatoValido && !runEsDuplicado
 
   const nombreValido = textoRequerido(nombre, 50)
   const apellidosValido = textoRequerido(apellidos, 100)
@@ -127,7 +132,7 @@ export default function AdminUsuarioForm() {
     }
 
     const usuarioGuardar: Usuario = {
-      run: run.toUpperCase().trim(),
+      run: runLimpio,
       nombre: nombre.trim(),
       apellidos: apellidos.trim(),
       correo: correo.trim(),
@@ -163,11 +168,11 @@ export default function AdminUsuarioForm() {
           {/* RUN */}
           <Col md={4}>
             <Form.Group controlId="runUsuario">
-              <Form.Label>RUN (sin puntos ni guión)</Form.Label>
+              <Form.Label>RUN (con o sin puntos/guión)</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Ej: 123456785"
-                maxLength={9}
+                placeholder="Ej: 123456785 o 12.345.678-5"
+                maxLength={12}
                 value={run}
                 readOnly={esEdicion}
                 onChange={(e) => setRun(e.target.value)}
@@ -176,7 +181,9 @@ export default function AdminUsuarioForm() {
                 isInvalid={tocado.run && !runValido}
               />
               <Form.Control.Feedback type="invalid">
-                RUN inválido o ya registrado.
+                {runEsDuplicado
+                  ? 'El RUN ingresado ya se encuentra registrado.'
+                  : obtenerMensajeErrorRun(run)}
               </Form.Control.Feedback>
             </Form.Group>
           </Col>
