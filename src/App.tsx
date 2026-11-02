@@ -39,6 +39,7 @@ export function App() {
             <Route path="/productos" element={<Productos />} />
             <Route path="/producto-detalle" element={<ProductoDetalle />} />
             <Route path="/carrito" element={<Carrito />} />
+            <Route path="/checkout" element={<Carrito />} />
             <Route path="/mis-boletas" element={<MisBoletas />} />
             <Route path="/login" element={<Login />} />
             <Route path="/registro" element={<Registro />} />

@@ -40,6 +40,30 @@ export default function MisBoletas() {
       )
       .join('')
 
+    const infoEnvioHtml = boleta.datosEnvio
+      ? `
+        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 14px; background: #f0fdf4 !important; padding: 10px 12px; border: 1px solid #bbf7d0; border-radius: 6px;">
+          <p style="margin: 0 0 4px 0; color: #166534 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos de Despacho / Entrega</p>
+          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Modalidad:</strong> ${
+            boleta.datosEnvio.modalidad === 'retiro_tienda'
+              ? 'Retiro en Tienda Forte & Piano'
+              : boleta.datosEnvio.modalidad === 'otra_direccion'
+              ? 'Despacho a domicilio (Dirección alternativa)'
+              : 'Despacho a domicilio (Dirección de perfil)'
+          }</p>
+          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Destinatario:</strong> ${boleta.datosEnvio.destinatario}${
+            boleta.datosEnvio.telefono ? ` &bull; Tel: ${boleta.datosEnvio.telefono}` : ''
+          }</p>
+          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Dirección:</strong> ${boleta.datosEnvio.direccion}, ${boleta.datosEnvio.comunaNombre}, ${boleta.datosEnvio.regionNombre}</p>
+          ${
+            boleta.datosEnvio.referencia
+              ? `<p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Indicaciones:</strong> ${boleta.datosEnvio.referencia}</p>`
+              : ''
+          }
+        </div>
+      `
+      : ''
+
     const boletaHtml = `
       <div id="boletaImprimible" style="text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; color: #0f172a !important; background: #ffffff !important; padding: 18px; border: 1px dashed #94a3b8; border-radius: 8px;">
         <div style="text-align: center; margin-bottom: 14px; border-bottom: 2px solid #0d233a; padding-bottom: 10px;">
@@ -51,7 +75,8 @@ export default function MisBoletas() {
           </div>
         </div>
 
-        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 14px; background: #f8fafc !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 10px; background: #f8fafc !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          <p style="margin: 0 0 4px 0; color: #334155 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos del Cliente (Facturación)</p>
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Fecha de emisión:</strong> ${boleta.fecha}</p>
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Cliente:</strong> ${boleta.clienteNombre}</p>
           ${boleta.clienteRun ? `<p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">R.U.T. Cliente:</strong> ${boleta.clienteRun}</p>` : ''}
@@ -59,6 +84,8 @@ export default function MisBoletas() {
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Medio de pago:</strong> ${boleta.metodoPago}</p>
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Estado:</strong> ${boleta.estado}</p>
         </div>
+
+        ${infoEnvioHtml}
 
         <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px;">
           <thead>
@@ -187,6 +214,7 @@ export default function MisBoletas() {
                     <th>Folio</th>
                     <th>Fecha</th>
                     <th>Artículos</th>
+                    <th>Despacho / Destino</th>
                     <th>Medio de Pago</th>
                     <th>Total</th>
                     <th>Estado</th>
@@ -202,6 +230,15 @@ export default function MisBoletas() {
                         <span title={b.items.map((i) => `${i.cantidad}x ${i.nombre}`).join(', ')}>
                           {b.items.reduce((acc, i) => acc + i.cantidad, 0)} unidades ({b.items.length} productos)
                         </span>
+                      </td>
+                      <td>
+                        {b.datosEnvio ? (
+                          <small className="d-block text-light">
+                            {b.datosEnvio.direccion}, {b.datosEnvio.comunaNombre}
+                          </small>
+                        ) : (
+                          <small className="text-muted">Estándar</small>
+                        )}
                       </td>
                       <td>{b.metodoPago}</td>
                       <td className="fw-bold">{formatearPrecio(b.total)}</td>

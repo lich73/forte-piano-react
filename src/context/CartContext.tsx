@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useMemo, useCallback } from 'react'
 import Swal from 'sweetalert2'
 import { FORTEPIANO_KEYS } from '../storage/claves'
-import { ItemCarrito, Producto } from '../types'
+import { ItemCarrito, Producto, DatosCheckout, Boleta } from '../types'
 import { formatearPrecio } from '../utils/formato'
 import { imprimirBoletaHtml } from '../utils/impresion'
 
@@ -19,7 +19,7 @@ interface CartContextValue {
   cambiarCantidad: (codigo: string, delta: number) => void
   eliminar: (codigo: string) => Promise<boolean>
   vaciar: () => void
-  finalizarCompra: () => void
+  finalizarCompra: (datosCheckout?: DatosCheckout) => void
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
@@ -192,7 +192,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Finaliza la compra con confirmación, descuento de stock y emisión de boleta instantánea
-  const finalizarCompra = async () => {
+  const finalizarCompra = async (datosCheckout?: DatosCheckout) => {
     if (carrito.length === 0) return
 
     // 1. Validar disponibilidad de stock en tiempo real
@@ -210,13 +210,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    const resumenDespacho = datosCheckout?.datosEnvio
+      ? `<div class="mt-2 p-2 rounded text-start small" style="background: rgba(255,255,255,0.06);">
+           <div><strong>Entrega:</strong> ${
+             datosCheckout.datosEnvio.modalidad === 'retiro_tienda'
+               ? 'Retiro en Tienda Forte & Piano'
+               : datosCheckout.datosEnvio.modalidad === 'otra_direccion'
+               ? 'Despacho a dirección alternativa'
+               : 'Despacho a dirección de perfil'
+           }</div>
+           <div><strong>Destino:</strong> ${datosCheckout.datosEnvio.direccion}, ${datosCheckout.datosEnvio.comunaNombre} (${datosCheckout.datosEnvio.regionNombre})</div>
+           <div><strong>Recibe:</strong> ${datosCheckout.datosEnvio.destinatario}</div>
+         </div>`
+      : ''
+
     // 2. Pedir confirmación de pago
     const resultado = await Swal.fire({
       title: 'Confirmar pago',
       html: `
         <p class="mb-2">¿Deseas concretar el pago y emitir la boleta?</p>
-        <p class="fs-4 fw-bold text-accent mb-0">Total: ${formatearPrecio(total)}</p>
-        <small class="text-muted">Método: Webpay Plus / Tarjeta de Débito</small>
+        <p class="fs-4 fw-bold text-accent mb-1">Total: ${formatearPrecio(total)}</p>
+        <small class="text-muted d-block">Método: ${datosCheckout?.metodoPago ?? 'Webpay Plus / Tarjeta de Débito'}</small>
+        ${resumenDespacho}
       `,
       icon: 'question',
       showCancelButton: true,
@@ -257,7 +272,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
 
     // 5. Generar la Boleta Electrónica
-    let boletasGuardadas: any[] = []
+    let boletasGuardadas: Boleta[] = []
     try {
       const boletasRaw = localStorage.getItem(FORTEPIANO_KEYS.boletas)
       if (boletasRaw) {
@@ -285,21 +300,26 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       subtotal: item.subtotal
     }))
 
-    const nuevaBoleta = {
+    const clienteNombreFinal = datosCheckout
+      ? `${datosCheckout.clienteNombre} ${datosCheckout.clienteApellidos}`.trim()
+      : sesionActual
+      ? `${sesionActual.nombre ?? ''} ${sesionActual.apellidos ?? ''}`.trim()
+      : 'Cliente General'
+
+    const nuevaBoleta: Boleta = {
       id: `BOL-${Date.now()}-${nuevoFolio}`,
       folio: nuevoFolio,
       fecha: fechaLegible,
-      clienteRun: sesionActual?.run,
-      clienteNombre: sesionActual
-        ? `${sesionActual.nombre ?? ''} ${sesionActual.apellidos ?? ''}`.trim()
-        : 'Cliente General',
-      clienteCorreo: sesionActual?.correo ?? 'cliente@fortepiano.cl',
+      clienteRun: datosCheckout?.clienteRun || sesionActual?.run,
+      clienteNombre: clienteNombreFinal || 'Cliente General',
+      clienteCorreo: datosCheckout?.clienteCorreo || sesionActual?.correo || 'cliente@fortepiano.cl',
       items: itemsBoleta,
       subtotalNeto,
       iva,
       total,
-      metodoPago: 'Webpay Plus / Débito',
-      estado: 'Emitida'
+      metodoPago: datosCheckout?.metodoPago || 'Webpay Plus / Débito',
+      estado: 'Emitida',
+      datosEnvio: datosCheckout?.datosEnvio
     }
 
     const nuevasBoletas = [nuevaBoleta, ...boletasGuardadas]
@@ -331,6 +351,30 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       )
       .join('')
 
+    const infoEnvioHtml = nuevaBoleta.datosEnvio
+      ? `
+        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 14px; background: #f0fdf4 !important; padding: 10px 12px; border: 1px solid #bbf7d0; border-radius: 6px;">
+          <p style="margin: 0 0 4px 0; color: #166534 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos de Despacho / Entrega</p>
+          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Modalidad:</strong> ${
+            nuevaBoleta.datosEnvio.modalidad === 'retiro_tienda'
+              ? 'Retiro en Tienda Forte & Piano'
+              : nuevaBoleta.datosEnvio.modalidad === 'otra_direccion'
+              ? 'Despacho a domicilio (Dirección alternativa)'
+              : 'Despacho a domicilio (Dirección de perfil)'
+          }</p>
+          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Destinatario:</strong> ${nuevaBoleta.datosEnvio.destinatario}${
+            nuevaBoleta.datosEnvio.telefono ? ` &bull; Tel: ${nuevaBoleta.datosEnvio.telefono}` : ''
+          }</p>
+          <p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Dirección:</strong> ${nuevaBoleta.datosEnvio.direccion}, ${nuevaBoleta.datosEnvio.comunaNombre}, ${nuevaBoleta.datosEnvio.regionNombre}</p>
+          ${
+            nuevaBoleta.datosEnvio.referencia
+              ? `<p style="margin: 2px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Indicaciones:</strong> ${nuevaBoleta.datosEnvio.referencia}</p>`
+              : ''
+          }
+        </div>
+      `
+      : ''
+
     const boletaHtml = `
       <div id="boletaImprimible" style="text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 13px; color: #0f172a !important; background: #ffffff !important; padding: 18px; border: 1px dashed #94a3b8; border-radius: 8px;">
         <div style="text-align: center; margin-bottom: 14px; border-bottom: 2px solid #0d233a; padding-bottom: 10px;">
@@ -342,13 +386,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 14px; background: #f8fafc !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+        <div class="boleta-info-box" style="font-size: 12px; margin-bottom: 10px; background: #f8fafc !important; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
+          <p style="margin: 0 0 4px 0; color: #334155 !important; font-weight: 700; text-transform: uppercase; font-size: 11px;">Datos del Cliente (Facturación)</p>
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Fecha de emisión:</strong> ${nuevaBoleta.fecha}</p>
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Cliente:</strong> ${nuevaBoleta.clienteNombre}</p>
           ${nuevaBoleta.clienteRun ? `<p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">R.U.T. Cliente:</strong> ${nuevaBoleta.clienteRun}</p>` : ''}
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Correo:</strong> ${nuevaBoleta.clienteCorreo}</p>
           <p style="margin: 3px 0; color: #1e293b !important;"><strong style="color: #0f172a !important;">Medio de pago:</strong> ${nuevaBoleta.metodoPago}</p>
         </div>
+
+        ${infoEnvioHtml}
 
         <table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px;">
           <thead>
@@ -404,7 +451,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         document.body.style.overflow = ''
       }
     }).then((swalRes) => {
-      // Asegurar que el modal se cierre antes de invocar la impresión para no bloquear clicks
       if (swalRes.isConfirmed) {
         setTimeout(() => {
           imprimirBoletaHtml(boletaHtml, nuevaBoleta.folio)

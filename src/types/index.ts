@@ -83,6 +83,29 @@ export interface ItemBoleta {
   subtotal: number
 }
 
+export type ModalidadEntrega = 'perfil' | 'otra_direccion' | 'retiro_tienda'
+
+export interface DatosEnvio {
+  modalidad: ModalidadEntrega
+  destinatario: string
+  telefono?: string
+  regionId?: number
+  regionNombre: string
+  comunaId?: number
+  comunaNombre: string
+  direccion: string
+  referencia?: string
+}
+
+export interface DatosCheckout {
+  clienteRun: string
+  clienteNombre: string
+  clienteApellidos: string
+  clienteCorreo: string
+  metodoPago?: string
+  datosEnvio: DatosEnvio
+}
+
 export interface Boleta {
   id: string
   folio: number
@@ -96,4 +119,5 @@ export interface Boleta {
   total: number
   metodoPago: string
   estado: 'Emitida' | 'Anulada'
+  datosEnvio?: DatosEnvio
 }
