@@ -146,7 +146,7 @@ describe('Pruebas de Props en Componentes React (Jasmine + Karma)', () => {
       )
     })
 
-    expect(container.textContent).toContain('OFERTA -20%')
+    expect(container.textContent).toContain('-20% OFERTA')
     expect(container.textContent).toContain('$480.000')
     expect(container.textContent).toContain('$600.000')
   })
