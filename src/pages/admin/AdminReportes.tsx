@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import { useBoletas } from '../../hooks/useBoletas'
 import { useColeccion } from '../../storage/useColeccion'
 import { FORTEPIANO_KEYS } from '../../storage/claves'
-import { Producto, Categoria } from '../../types'
-import { formatearPrecio } from '../../utils/formato'
+import { Producto, Categoria, EstadoPedido } from '../../types'
+import { formatearPrecio, tieneOfertaActiva } from '../../utils/formato'
 
 export default function AdminReportes() {
   const { boletas } = useBoletas()
@@ -30,11 +30,12 @@ export default function AdminReportes() {
 
     return {
       totalIngresos,
+      totalPedidos: boletas.length,
       totalBoletas: boletasValidas.length,
       totalUnidadesVendidas,
       cantidadCriticos: productosCriticos.length
     }
-  }, [boletasValidas, productos])
+  }, [boletas.length, boletasValidas, productos])
 
   // 2. Ranking de productos más vendidos
   const rankingProductos = useMemo(() => {
@@ -65,7 +66,34 @@ export default function AdminReportes() {
       .sort((a, b) => a.stock - b.stock)
   }, [productos])
 
-  // 4. Ventas por Categoría
+  // 4. Productos con mayor stock
+  const productosMayorStock = useMemo(() => {
+    return [...productos].sort((a, b) => b.stock - a.stock).slice(0, 5)
+  }, [productos])
+
+  // 5. Distribución por estado de pedido
+  const distribucionEstados = useMemo(() => {
+    const estados: Array<{ estado: EstadoPedido; etiqueta: string; variant: string }> = [
+      { estado: 'Emitida', etiqueta: 'Emitida (Pago exitoso)', variant: 'success' },
+      { estado: 'Pendiente', etiqueta: 'Pendiente (Intentar más tarde)', variant: 'warning' },
+      { estado: 'Rechazada', etiqueta: 'Rechazada (Pago rechazado)', variant: 'danger' },
+      { estado: 'Anulada', etiqueta: 'Anulada', variant: 'secondary' }
+    ]
+    return estados.map((item) => {
+      const filtradas = boletas.filter((b) => b.estado === item.estado)
+      const monto = filtradas.reduce((acc, b) => acc + b.total, 0)
+      const porcentaje =
+        boletas.length > 0 ? Math.round((filtradas.length / boletas.length) * 100) : 0
+      return {
+        ...item,
+        cantidad: filtradas.length,
+        monto,
+        porcentaje
+      }
+    })
+  }, [boletas])
+
+  // 6. Ventas por Categoría
   const ventasPorCategoria = useMemo(() => {
     const mapaCat: Record<number, { nombre: string; unidades: number; total: number }> = {}
 
@@ -94,7 +122,7 @@ export default function AdminReportes() {
         <div>
           <h1 className="h3 mb-1">Reportes de Gestión y Ventas</h1>
           <p className="text-muted mb-0">
-            Métricas de comercialización, inventario crítico y rendimiento de catálogo.
+            Métricas de comercialización, estados de pedidos, inventario crítico y rendimiento de catálogo.
           </p>
         </div>
       </div>
@@ -104,20 +132,23 @@ export default function AdminReportes() {
         <Col sm={6} lg={3}>
           <Card className="bg-forte-panel border-secondary h-100">
             <Card.Body>
-              <div className="text-muted small text-uppercase">Ingresos Totales</div>
+              <div className="text-muted small text-uppercase">Ventas Totales</div>
               <h3 className="h4 text-accent mt-1 mb-0">
                 {formatearPrecio(metricas.totalIngresos)}
               </h3>
-              <small className="text-muted">Boletas emitidas</small>
+              <small className="text-muted">En boletas emitidas</small>
             </Card.Body>
           </Card>
         </Col>
         <Col sm={6} lg={3}>
           <Card className="bg-forte-panel border-secondary h-100">
             <Card.Body>
-              <div className="text-muted small text-uppercase">Boletas Emitidas</div>
-              <h3 className="h4 text-light mt-1 mb-0">{metricas.totalBoletas}</h3>
-              <small className="text-success">Transacciones confirmadas</small>
+              <div className="text-muted small text-uppercase">Cantidad de Pedidos</div>
+              <h3 className="h4 text-light mt-1 mb-0">
+                {metricas.totalPedidos}{' '}
+                <span className="fs-6 text-success">({metricas.totalBoletas} emitidas)</span>
+              </h3>
+              <small className="text-success">Transacciones registradas</small>
             </Card.Body>
           </Card>
         </Col>
@@ -148,6 +179,76 @@ export default function AdminReportes() {
                 {metricas.cantidadCriticos} producto(s)
               </h3>
               <small className="text-muted">Requieren reposición</small>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Distribución de Pedidos por Estado y Productos con Mayor Stock */}
+      <Row className="g-4 mb-4">
+        <Col lg={6}>
+          <Card className="bg-forte-panel border-secondary shadow-sm h-100">
+            <Card.Header className="bg-transparent border-secondary">
+              <h2 className="h5 mb-0 text-light">
+                <i className="bi bi-diagram-3 me-2 text-accent"></i>Distribución de Pedidos por Estado
+              </h2>
+            </Card.Header>
+            <Card.Body>
+              {distribucionEstados.map((est) => (
+                <div key={est.estado} className="mb-3">
+                  <div className="d-flex justify-content-between small mb-1">
+                    <span className="fw-bold">{est.etiqueta}</span>
+                    <span className="text-muted">
+                      {est.cantidad} pedido(s) &bull; {formatearPrecio(est.monto)} ({est.porcentaje}%)
+                    </span>
+                  </div>
+                  <ProgressBar
+                    now={est.porcentaje}
+                    variant={est.variant}
+                    style={{ height: '8px' }}
+                  />
+                </div>
+              ))}
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col lg={6}>
+          <Card className="bg-forte-panel border-secondary shadow-sm h-100">
+            <Card.Header className="bg-transparent border-secondary">
+              <h2 className="h5 mb-0 text-light">
+                <i className="bi bi-boxes me-2 text-accent"></i>Productos con Mayor Stock
+              </h2>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <div className="table-responsive">
+                <Table hover variant="dark" className="mb-0 align-middle">
+                  <thead>
+                    <tr className="border-secondary text-muted">
+                      <th>Código</th>
+                      <th>Instrumento</th>
+                      <th className="text-center">Oferta</th>
+                      <th className="text-end">Stock Disponible</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productosMayorStock.map((p) => (
+                      <tr key={p.codigo} className="border-secondary">
+                        <td><code>{p.codigo}</code></td>
+                        <td>{p.nombre}</td>
+                        <td className="text-center">
+                          {tieneOfertaActiva(p) ? (
+                            <Badge bg="danger">-{p.porcentajeDescuento}%</Badge>
+                          ) : (
+                            <span className="text-muted small">Normal</span>
+                          )}
+                        </td>
+                        <td className="text-end fw-bold text-info">{p.stock} u.</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
             </Card.Body>
           </Card>
         </Col>

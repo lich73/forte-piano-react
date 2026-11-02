@@ -466,7 +466,3 @@ export const BOLETAS_INICIALES: Boleta[] = [
     }
   }
 ]
-export function _noop() {
-  if (false) {
-  }
-}

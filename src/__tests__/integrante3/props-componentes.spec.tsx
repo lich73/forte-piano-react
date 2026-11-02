@@ -119,7 +119,39 @@ describe('Pruebas de Props en Componentes React (Jasmine + Karma)', () => {
     expect(container.textContent).toContain('¡Stock Crítico: 2!')
   })
 
-  // Test 4: Props en DataTable (filas, columnas, filaKey)
+  // Test 4: Props en ProductCard cuando el producto está en oferta
+  it('ProductCard debe mostrar badge de oferta, precio rebajado y precio original tachado cuando enOferta es true', async () => {
+    const mockOferta: Producto = {
+      codigo: 'PIANO-OF-01',
+      nombre: 'Piano Digital Kawai ES120',
+      descripcion: 'Piano digital compacto en promoción',
+      precio: 600000,
+      stock: 8,
+      stockCritico: 2,
+      categoriaId: 1,
+      imagen: 'es120.jpg',
+      estado: 'Activo',
+      enOferta: true,
+      porcentajeDescuento: 20,
+      precioOferta: 480000
+    }
+
+    await act(async () => {
+      root.render(
+        <MemoryRouter>
+          <CartProvider>
+            <ProductCard producto={mockOferta} />
+          </CartProvider>
+        </MemoryRouter>
+      )
+    })
+
+    expect(container.textContent).toContain('OFERTA -20%')
+    expect(container.textContent).toContain('$480.000')
+    expect(container.textContent).toContain('$600.000')
+  })
+
+  // Test 5: Props en DataTable (filas, columnas, filaKey)
   it('DataTable debe recibir props "filas" y "columnas" y renderizar la tabla dinámica en el DOM', async () => {
     interface InstrumentoDemo {
       codigo: string
