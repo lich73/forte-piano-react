@@ -160,9 +160,11 @@ export default function AdminDashboard() {
           <Link to="/admin/boletas" className="btn btn-outline-accent btn-sm">
             <i className="bi bi-receipt me-1" /> Ver Pedidos ({boletas.length})
           </Link>
-          <Link to="/admin/reportes" className="btn btn-accent btn-sm">
-            <i className="bi bi-bar-chart-line me-1" /> Reporte Detallado
-          </Link>
+          {!esVendedor && (
+            <Link to="/admin/reportes" className="btn btn-accent btn-sm">
+              <i className="bi bi-bar-chart-line me-1" /> Reporte Detallado
+            </Link>
+          )}
         </div>
       </div>
 

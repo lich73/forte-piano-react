@@ -32,46 +32,47 @@ export function App() {
     <AuthProvider>
       <CartProvider>
         <BrowserRouter>
-        <Routes>
-          {/* Rutas de la tienda pública con Layout (Navbar + Outlet + Footer) */}
-          <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/productos" element={<Productos />} />
-            <Route path="/producto-detalle" element={<ProductoDetalle />} />
-            <Route path="/carrito" element={<Carrito />} />
-            <Route path="/checkout" element={<Carrito />} />
-            <Route path="/mis-boletas" element={<MisBoletas />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/registro" element={<Registro />} />
-            <Route path="/nosotros" element={<Nosotros />} />
-            <Route path="/servicios" element={<Servicios />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/blog/:slug" element={<BlogDetalle />} />
-            <Route path="/contacto" element={<Contacto />} />
-          </Route>
+          <Routes>
+            {/* Rutas de la tienda pública con Layout (Navbar + Outlet + Footer) */}
+            <Route element={<Layout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/productos" element={<Productos />} />
+              <Route path="/producto-detalle" element={<ProductoDetalle />} />
+              <Route path="/carrito" element={<Carrito />} />
+              <Route path="/checkout" element={<Carrito />} />
+              <Route path="/mis-boletas" element={<MisBoletas />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/registro" element={<Registro />} />
+              <Route path="/nosotros" element={<Nosotros />} />
+              <Route path="/servicios" element={<Servicios />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogDetalle />} />
+              <Route path="/contacto" element={<Contacto />} />
+            </Route>
 
-          {/* Rutas administrativas protegidas (Roles 1 y 2: Administrador y Vendedor) */}
-          <Route element={<RutaProtegida rolesPermitidos={[1, 2]} />}>
-            <Route element={<AdminLayout />}>
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/productos" element={<AdminProductos />} />
-              <Route path="/admin/productos/form" element={<AdminProductoForm />} />
-              <Route path="/admin/boletas" element={<AdminBoletas />} />
-              <Route path="/admin/categorias" element={<AdminCategorias />} />
-              <Route path="/admin/reportes" element={<AdminReportes />} />
+            {/* Rutas administrativas compartidas (Roles 1 y 2: Administrador y Vendedor) */}
+            {/* Según pauta: Vendedor puede visualizar lista/detalle de productos y lista/detalle de órdenes */}
+            <Route element={<RutaProtegida rolesPermitidos={[1, 2]} />}>
+              <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/productos" element={<AdminProductos />} />
+                <Route path="/admin/boletas" element={<AdminBoletas />} />
 
-              {/* Rutas exclusivas del rol 1 (Administrador) */}
-              <Route element={<RutaProtegida rolesPermitidos={[1]} />}>
-                <Route path="/admin/usuarios" element={<AdminUsuarios />} />
-                <Route path="/admin/usuarios/form" element={<AdminUsuarioForm />} />
+                {/* Rutas exclusivas del rol 1 (Administrador) */}
+                <Route element={<RutaProtegida rolesPermitidos={[1]} />}>
+                  <Route path="/admin/productos/form" element={<AdminProductoForm />} />
+                  <Route path="/admin/categorias" element={<AdminCategorias />} />
+                  <Route path="/admin/reportes" element={<AdminReportes />} />
+                  <Route path="/admin/usuarios" element={<AdminUsuarios />} />
+                  <Route path="/admin/usuarios/form" element={<AdminUsuarioForm />} />
+                </Route>
               </Route>
             </Route>
-          </Route>
 
-          {/* Ruta comodín */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Ruta comodín */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
       </CartProvider>
     </AuthProvider>
   )

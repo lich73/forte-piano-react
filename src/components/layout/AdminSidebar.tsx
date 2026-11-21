@@ -5,6 +5,8 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ rolId = 1 }: AdminSidebarProps) {
+  const esAdmin = rolId === 1
+
   return (
     <aside className="admin-sidebar h-100">
       <h6 className="text-uppercase text-muted small mb-3">Panel administrativo</h6>
@@ -26,28 +28,30 @@ export function AdminSidebar({ rolId = 1 }: AdminSidebarProps) {
           to="/admin/boletas"
           className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
         >
-          <i className="bi bi-receipt me-2"></i>Boletas
+          <i className="bi bi-receipt me-2"></i>Boletas / Órdenes
         </NavLink>
-        <NavLink
-          to="/admin/categorias"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          <i className="bi bi-tags me-2"></i>Categorías
-        </NavLink>
-        <NavLink
-          to="/admin/reportes"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-        >
-          <i className="bi bi-graph-up me-2"></i>Reportes
-        </NavLink>
-        {rolId === 1 && (
-          <NavLink
-            to="/admin/usuarios"
-            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-            id="sidebarUsuariosLink"
-          >
-            <i className="bi bi-people me-2"></i>Usuarios
-          </NavLink>
+        {esAdmin && (
+          <>
+            <NavLink
+              to="/admin/categorias"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              <i className="bi bi-tags me-2"></i>Categorías
+            </NavLink>
+            <NavLink
+              to="/admin/reportes"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+            >
+              <i className="bi bi-graph-up me-2"></i>Reportes
+            </NavLink>
+            <NavLink
+              to="/admin/usuarios"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              id="sidebarUsuariosLink"
+            >
+              <i className="bi bi-people me-2"></i>Usuarios
+            </NavLink>
+          </>
         )}
         <hr className="border-secondary my-3" />
         <Link to="/" className="nav-link">
