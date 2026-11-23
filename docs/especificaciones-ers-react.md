@@ -333,32 +333,40 @@ A nivel macro, el sistema ofrece tres subsistemas principales:
 * **Test Runner:** **Karma v6.4** configurado en `karma.conf.cjs`.
 * **Framework BDD:** **Jasmine v5.1 / v7.0** (`describe`, `it`, `expect`).
 * **Transformador:** **karma-vite** para procesar módulos TypeScript y JSX en tiempo real.
+* **Cobertura:** **karma-coverage 2.2** + **vite-plugin-istanbul**, instrumentando `src/**/*.{ts,tsx}` y excluyendo `src/__tests__/**`.
 * **Navegador de Ejecución:** **Chrome Headless** (automatización en consola sin interfaz gráfica).
 * **Comando de Ejecución:** `npm test`.
 
 ---
 
-### 3.4.2. Matriz de Pruebas Unitarias (27 Casos de Prueba Verificados)
+### 3.4.2. Matriz de Pruebas Unitarias (5 Casos de Prueba Verificados)
 
-| Integrante Responsable | Suite de Pruebas (Archivo) | Módulo Evaluado | Casos de Prueba Implementados (`it`) | Resultado de Ejecución |
+Todos los tests viven en una única carpeta: `src/__tests__/`. Las suites antiguas (`integrante1`, `integrante2`, `integrante3`) fueron eliminadas del repositorio.
+
+| Categoría | Suite de Pruebas (Archivo) | Módulo Evaluado | Caso de Prueba Implementado (`it`) | Resultado de Ejecución |
 |---|---|---|---|---|
-| **Integrante 1** | `src/__tests__/integrante1/validaciones.spec.ts` | `src/utils/validaciones.ts` | 1. Validación de RUNs chilenos válidos con algoritmo módulo 11.<br>2. Rechazo de RUNs con dígito verificador erróneo.<br>3. Rechazo de RUNs con longitud o caracteres inválidos.<br>4. Aceptación exclusiva de correos con dominios permitidos (`@duoc.cl`, `@profesor.duoc.cl`, `@gmail.com`).<br>5. Rechazo de correos no autorizados (`@hotmail.com`, etc.).<br>6. Rechazo de correos vacíos o mayores a 100 caracteres.<br>7. Validación de contraseña en rango 4 a 10 caracteres.<br>8. Rechazo de contraseñas fuera de rango. | **100% SUCCESS** |
-| **Integrante 1** | `src/__tests__/integrante1/auth-context.spec.ts` | `src/context/AuthContext.tsx` | 9. Inicio de sesión exitoso con credenciales correctas y persistencia de `Sesion` en `localStorage`.<br>10. Rechazo de autenticación con contraseña incorrecta o cuenta con estado `'Inactivo'`. | **100% SUCCESS** |
-| **Integrante 2** | `src/__tests__/integrante2/formato-precio.spec.ts` | `src/utils/formato.ts` | 11. Formateo de precio con separador de miles chileno (`$699.990`).<br>12. Manejo consistente de valor cero (`$0`) y redondeos. | **100% SUCCESS** |
-| **Integrante 2** | `src/__tests__/integrante2/cart-context.spec.ts` | `src/context/CartContext.tsx` | 13. Inicialización de carrito vacío en `localStorage`.<br>14. Adición de producto dentro del stock incrementa `totalItems`.<br>15. Cálculo correcto de subtotales por producto y total de compra.<br>16. Bloqueo de compra si la cantidad solicitada excede el stock del producto.<br>17. Bloqueo de adición para productos sin stock disponible (`stock: 0`).<br>18. Modificación de cantidades mediante deltas `+` y `-`.<br>19. Vaciado completo del carrito de compras. | **100% SUCCESS** |
-| **Integrante 3** | `src/__tests__/integrante3/datatable.spec.ts` | `src/components/common/DataTable.tsx` | 20. Filtrado de registros en tiempo real ante texto de búsqueda coincidente.<br>21. Estado sin resultados si ningún registro coincide.<br>22. Ordenación de columnas en orden ascendente (A-Z / menor a mayor).<br>23. Alternancia de ordenación a orden descendente (Z-A / mayor a menor).<br>24. Paginación correcta respetando el número de filas por página. | **100% SUCCESS** |
-| **Integrante 3** | `src/__tests__/integrante3/contacto-val.spec.ts` | `src/pages/Contacto.tsx` | 25. Rechazo de formulario si faltan campos obligatorios.<br>26. Rechazo de comentarios que excedan el límite de 500 caracteres.<br>27. Registro exitoso de mensaje en la colección `fortepiano_contactos` de `localStorage` con fecha actual. | **100% SUCCESS** |
+| **Render** | `src/__tests__/1-render.spec.tsx` | `src/components/layout/Footer.tsx` | Renderiza `<Footer>` dentro de `MemoryRouter` y comprueba el nombre de la tienda y sus enlaces. | **100% SUCCESS** |
+| **Props** | `src/__tests__/2-props.spec.tsx` | `src/components/common/NewsCard.tsx` | Recibe la prop `noticia` y muestra en pantalla su título, fecha y resumen. | **100% SUCCESS** |
+| **State** | `src/__tests__/3-state.spec.tsx` | `src/pages/Productos.tsx` | Alterna el estado `soloOfertas` mediante el botón de filtro y actualiza el listado visible. | **100% SUCCESS** |
+| **Event** | `src/__tests__/4-event.spec.tsx` | `src/components/common/ProductCard.tsx`, `src/context/CartContext.tsx` | Ejecuta el evento `onClick` de "Añadir al carrito" y guarda el producto en el carrito persistido. | **100% SUCCESS** |
+| **Entorno** | `src/__tests__/5-entorno.spec.ts` | `src/data/seed.ts`, `src/storage/claves.ts` | Inicializa las claves y semillas de `localStorage`; verifica persistencia y recuperación de datos. | **100% SUCCESS** |
 
 #### Evidencia de Ejecución en Consola (`npm test`):
 ```text
 > forte-piano-react@1.0.0 test
 > karma start karma.conf.cjs
 
-INFO [karma-server]: Karma v6.4.4 server started at http://localhost:9876/
-INFO [launcher]: Starting browser ChromeHeadless
-INFO [Chrome Headless 155.0.0.0 (Windows 10)]: Connected on socket with id 86775637
-Chrome Headless 155.0.0.0 (Windows 10): Executed 27 of 27 SUCCESS (0.072 secs / 0.063 secs)
-TOTAL: 27 SUCCESS
+==========================================================================
+  DESGLOSE DE TESTS UNITARIOS - FORTE & PIANO (Carpeta: __tests__)
+==========================================================================
+
+  ✔ TEST #1 [PASÓ] — Tests Varios - 1. Categoría: RENDER
+  ✔ TEST #2 [PASÓ] — Tests Varios - 2. Categoría: PROPS
+  ✔ TEST #3 [PASÓ] — Tests Varios - 3. Categoría: STATE (Estado)
+  ✔ TEST #4 [PASÓ] — Tests Varios - 4. Categoría: EVENT (Eventos)
+  ✔ TEST #5 [PASÓ] — Tests Varios - 5. Categoría: ENTORNO
+
+Executed 5 of 5 SUCCESS
 ```
 
 ---
@@ -367,14 +375,12 @@ TOTAL: 27 SUCCESS
 
 | Requisito Funcional | Módulos de Código Fuente | Pruebas Unitarias de Verificación (Karma + Jasmine) |
 |---|---|---|
-| **RF01** (Semillas y Persistencia) | `src/data/seed.ts`, `src/storage/useColeccion.ts` | `cart-context.spec.ts` (Validación de lectura y persistencia en localStorage) |
-| **RF02** (Registro de Clientes) | `src/pages/Registro.tsx`, `src/utils/validaciones.ts` | `validaciones.spec.ts` (Casos 1 al 8: RUN, email, password) |
-| **RF03** (Login y Sesión) | `src/pages/Login.tsx`, `src/context/AuthContext.tsx` | `auth-context.spec.ts` (Casos 9 y 10: login, credenciales, estado inactivo) |
-| **RF04 / RF05** (Catálogo y Precios) | `src/pages/Productos.tsx`, `src/utils/formato.ts` | `formato-precio.spec.ts` (Casos 11 y 12: formato moneda es-CL) |
-| **RF06** (Carrito y Stock) | `src/pages/Carrito.tsx`, `src/context/CartContext.tsx` | `cart-context.spec.ts` (Casos 13 al 19: límites de stock, subtotales, totales) |
-| **RF09** (Contacto) | `src/pages/Contacto.tsx` | `contacto-val.spec.ts` (Casos 25 al 27: validaciones, longitud, guardado) |
-| **RF10 / RF11** (Admin DataTables) | `src/components/common/DataTable.tsx` | `datatable.spec.ts` (Casos 20 al 24: búsqueda, ordenación, paginación) |
-| **RF12** (Rutas Protegidas) | `src/components/common/RutaProtegida.tsx` | `auth-context.spec.ts` (Control de roles y autorización de sesión) |
+| **RF01** (Semillas y Persistencia) | `src/data/seed.ts`, `src/storage/claves.ts` | `5-entorno.spec.ts` (claves y semillas inicializadas en `localStorage`) |
+| **RF04 / RF05** (Catálogo y Precios) | `src/pages/Productos.tsx`, `src/components/common/ProductCard.tsx` | `3-state.spec.tsx` (filtro `soloOfertas`), `4-event.spec.tsx` (evento añadir al carrito) |
+| **RF06** (Carrito y Stock) | `src/context/CartContext.tsx` | `4-event.spec.tsx` (persistencia del producto en el carrito) |
+| **RF07** (Difusión Musical y Blog) | `src/components/common/NewsCard.tsx` | `2-props.spec.tsx` (render de la prop `noticia`) |
+| **Layout Público** (transversal) | `src/components/layout/Footer.tsx` | `1-render.spec.tsx` (render del Footer y sus enlaces) |
+| **RF02, RF03, RF09, RF10, RF11, RF12** | Registro, Login, Contacto, DataTable y Rutas Protegidas | **Sin cobertura en la suite actual** (las suites `integrante1/2/3` fueron eliminadas). Se recomienda reincorporarlas en una próxima iteración. |
 
 ---
 
@@ -383,4 +389,4 @@ La versión 2.0 de esta Especificación de Requisitos de Software refleja con m�
 1. Se alcanzó **paridad funcional total (100%)** respecto a las pantallas y requerimientos de la versión original.
 2. Se eliminó la dependencia de servidor Python/Flask, convirtiendo el proyecto en una **SPA estática optimizada de alto rendimiento**.
 3. Se modernizó el código fuente con **TypeScript estricto** y componentes reutilizables de **React-Bootstrap**, erradicando por completo el código espagueti y las manipulaciones imperativas del DOM.
-4. Se incorporó una arquitectura formal de **Testing Unitario con Karma y Jasmine**, garantizando que el 100% de los 27 casos de prueba críticos del sistema pasen satisfactoriamente en entornos de integración continua (*Chrome Headless*).
+4. Se incorporó una arquitectura formal de **Testing Unitario con Karma y Jasmine**, con una suite vigente de **5 casos de prueba** (Render, Props, State, Event y Entorno) que se ejecutan satisfactoriamente en *Chrome Headless*, junto con medición de cobertura mediante `karma-coverage`.

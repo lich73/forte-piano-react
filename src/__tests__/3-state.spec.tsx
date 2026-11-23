@@ -1,8 +1,8 @@
 import { act } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { CartProvider } from '../../context/CartContext'
-import Productos from '../../pages/Productos'
+import { CartProvider } from '../context/CartContext'
+import Productos from '../pages/Productos'
 
 ;(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

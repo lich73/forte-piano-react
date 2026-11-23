@@ -18,7 +18,7 @@ Cada bloque incluye:
 1. *(0:00 - 0:25)* Portada de la tienda `http://localhost:5173/` navegando por el Home.
 2. *(0:25 - 0:55)* El código de `src/App.tsx`, mostrando la estructura de `<Layout>` y `<AdminLayout>`, y luego la pantalla de Login y Registro en el navegador.
 3. *(0:55 - 1:15)* El formulario de Registro mostrando el selector dependiente de Región a Comuna, y la prueba de entrar a `/admin` sin sesión mostrando la alerta de SweetAlert2 "Acceso restringido".
-4. *(1:15 - 1:40)* El archivo de test `src/__tests__/integrante1/validaciones.spec.ts` y la terminal ejecutando `npm test`.
+4. *(1:15 - 1:40)* Los archivos de test `src/__tests__/1-render.spec.tsx` y `src/__tests__/2-props.spec.tsx`, y la terminal ejecutando `npm test`.
 
 ---
 
@@ -32,9 +32,9 @@ Cada bloque incluye:
 >
 > *En el área de seguridad, implementé el `AuthContext` utilizando la Context API para centralizar el estado global de la sesión con persistencia en `localStorage`. Desarrollé la vista de **Login**, que aplica control de acceso basado en roles (**RBAC**): redirige automáticamente a administradores y vendedores al panel `/admin`, y a los clientes a la tienda pública. En la vista de **Registro**, implementé la carga reactiva de comunas sujeta a la región seleccionada y la validación de unicidad de RUN. Además, para proteger las rutas privadas, construí el componente guard `<RutaProtegida>`, que intercepta accesos no autorizados y emite notificaciones modales con SweetAlert2.*
 >
-> *En cuanto al aseguramiento de calidad con **Karma y Jasmine**, diseñé dos suites de pruebas unitarias:*
-> 1. *`validaciones.spec.ts`: donde verifiqué mediante pruebas paramétricas la función `validarRun()`, que calcula el dígito verificador chileno con el algoritmo Módulo 11, junto con el filtrado estricto de correos restringido a dominios autorizados como `@duoc.cl` o `@gmail.com`.*
-> 2. *`auth-context.spec.ts`: donde validé el ciclo de vida de la sesión, comprobando la persistencia de credenciales válidas y el rechazo inmediato de claves incorrectas o cuentas inactivas.*
+> *En cuanto al aseguramiento de calidad con **Karma y Jasmine**, la suite quedó consolidada en `src/__tests__/` con cinco pruebas unitarias. Me corresponden las dos primeras:*
+> 1. *`1-render.spec.tsx`: renderiza el componente `<Footer>` dentro de un `MemoryRouter` y verifica que aparezcan el nombre de la tienda y sus enlaces.*
+> 2. *`2-props.spec.tsx`: pasa una prop `noticia` a `<NewsCard>` y comprueba que el título, la fecha y el resumen se muestren correctamente.*
 >
 > *A continuación, mi compañero les explicará cómo resolvimos la capa de datos reactiva, el catálogo de productos y el carrito de compras."*
 
@@ -48,7 +48,7 @@ Cada bloque incluye:
 1. *(0:00 - 0:25)* Código de `src/storage/useColeccion.ts` y `src/context/CartContext.tsx`.
 2. *(0:25 - 0:55)* Navegador en `http://localhost:5173/`: El Hero Carousel deslizándose y luego la página de Catálogo (`/productos`) escribiendo en el buscador y cambiando el selector de categorías.
 3. *(0:55 - 1:20)* Página de Detalle de Producto (`/producto-detalle?codigo=...`), aumentando la cantidad hasta el stock límite y haciendo clic en "Añadir al carrito", mostrando cómo se actualiza el badge rojo en el Navbar en tiempo real.
-4. *(1:20 - 1:40)* Pantalla del Carrito (`/carrito`) sumando/restando cantidades, código de `src/__tests__/integrante2/` y la terminal ejecutando `npm test`.
+4. *(1:20 - 1:40)* Pantalla del Carrito (`/carrito`) sumando/restando cantidades, código de `src/__tests__/3-state.spec.tsx` y `4-event.spec.tsx`, y la terminal ejecutando `npm test`.
 
 ---
 
@@ -65,8 +65,8 @@ Cada bloque incluye:
 > * *Y finalmente la pantalla del **Carrito de compras**, que actualiza el badge del Navbar en vivo sin recargar la página, permite modificar cantidades con botones `+` y `-`, y confirma la compra o vaciado mediante modales de SweetAlert2.*
 >
 > *Para mis **pruebas unitarias con Karma y Jasmine**, implementé:*
-> 1. *El test de formateo (`formato-precio.spec.ts`), que verifica que cualquier valor numérico se convierta al formato de moneda chilena con separador de miles correcto, por ejemplo `$699.990`, controlando además valores en cero.*
-> 2. *El test de lógica de compra (`cart-context.spec.ts`), que comprueba que añadir productos actualice la cantidad y los subtotales, y que el sistema bloquee intentos de compra cuando no hay stock suficiente.*
+> 1. *El test de estado (`3-state.spec.tsx`), que renderiza la página `<Productos>` y verifica que el botón de filtro alterna el estado `soloOfertas`, cambiando el texto de "Ver productos en oferta" a "Viendo solo ofertas".*
+> 2. *El test de eventos (`4-event.spec.tsx`), que dispara el clic del botón "Añadir al carrito" en `<ProductCard>` y comprueba que el producto queda guardado en `localStorage` con cantidad 1.*
 >
 > *Ahora, mi compañero les presentará las páginas públicas de contenido y el panel administrativo."*
 
@@ -79,7 +79,7 @@ Cada bloque incluye:
 ### 🎥 Qué mostrar en pantalla durante la grabación:
 1. *(0:00 - 0:25)* Páginas públicas: `Nosotros` abriendo las preguntas frecuentes (Accordion dark), `Servicios`, `Blog` y `Contacto`.
 2. *(0:25 - 1:00)* Panel administrativo `http://localhost:5173/admin`: Dashboard con contadores y alertas de stock crítico; luego `AdminProductos` interactuando con el `<DataTable>` (buscando en el filtro, ordenando columnas y mostrando paginación).
-3. *(1:00 - 1:25)* Código de `src/components/common/DataTable.tsx` y código de sus tests en `src/__tests__/integrante3/`.
+3. *(1:00 - 1:25)* Código de `src/components/common/DataTable.tsx` y código del test `src/__tests__/5-entorno.spec.ts`.
 4. *(1:25 - 1:40)* Demostración final: Terminal ejecutando `npm test` con todos los tests pasando en verde, luego `npm run build` mostrando compilación exitosa y pantalla final.
 
 ---
@@ -98,9 +98,8 @@ Cada bloque incluye:
 >
 > *Con este componente armé el **AdminDashboard** (que destaca los instrumentos en nivel crítico de inventario), el mantenedor de **Productos** (con modo solo lectura para vendedores y acciones completas para administradores) y el mantenedor de **Usuarios** con creación y edición completa.*
 >
-> *Mis **pruebas unitarias con Karma y Jasmine** abarcaron:*
-> 1. *El test del componente `<DataTable>` (`datatable.spec.ts`), validando que el filtro por texto reduzca las filas visibles con exactitud y que la ordenación alterne correctamente de forma ascendente y descendente.*
-> 2. *El test del formulario de Contacto (`contacto-val.spec.ts`), comprobando que se rechacen comentarios vacíos o que excedan los 500 caracteres, y que los envíos válidos se guarden en `localStorage`.*
+> *Mis **pruebas unitarias con Karma y Jasmine** corresponden al test de entorno:*
+> 1. *`5-entorno.spec.ts`, que verifica que `window`, `document` y `localStorage` estén disponibles, ejecuta `inicializarDatos()` y comprueba que las colecciones de roles, productos y usuarios se carguen correctamente usando las claves de `FORTEPIANO_KEYS`.*
 >
 > *Para cerrar, ejecutamos en nuestra terminal `npm test`, donde podemos comprobar que todas las pruebas unitarias pasan limpiamente en Chrome Headless, y con `npm run build`, verificamos que TypeScript compila con cero advertencias y genera el paquete de producción listo para desplegar.*
 >
