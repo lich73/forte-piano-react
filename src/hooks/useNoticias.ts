@@ -1,35 +1,25 @@
 import { useCallback } from 'react'
-import { FORTEPIANO_KEYS } from '../storage/claves'
-import { useColeccion } from '../storage/useColeccion'
-import { Noticia } from '../types'
+import { noticiasApi } from '../services/api'
+import type { Noticia } from '../types'
+import { useApiLista } from './useApiLista'
 
-/**
- * Hook para consultar y gestionar las noticias del blog.
- */
+/** Noticias del blog obtenidas desde GET /api/v1/noticias. */
 export function useNoticias() {
-  const { datos: noticias, guardar, recargar } = useColeccion<Noticia>(FORTEPIANO_KEYS.blog)
+  const { datos: noticias, cargando, error, recargar } = useApiLista<Noticia>(() =>
+    noticiasApi.listar()
+  )
 
   const ultimas = useCallback(
-    (cantidad = 3): Noticia[] => {
-      return noticias.slice(0, cantidad)
-    },
+    (cantidad = 3): Noticia[] => noticias.slice(0, cantidad),
     [noticias]
   )
 
   const obtenerNoticia = useCallback(
-    (slug: string): Noticia | undefined => {
-      return noticias.find((n) => n.slug === slug)
-    },
+    (slug: string): Noticia | undefined => noticias.find((n) => n.slug === slug),
     [noticias]
   )
 
-  return {
-    noticias,
-    ultimas,
-    obtenerNoticia,
-    guardar,
-    recargar
-  }
+  return { noticias, cargando, error, ultimas, obtenerNoticia, recargar }
 }
 
 export default useNoticias

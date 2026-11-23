@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Card, Table, Badge, Button, Row, Col, Alert } from 'react-bootstrap'
+import { Card, Table, Badge, Button, Alert } from 'react-bootstrap'
 import Swal from 'sweetalert2'
 import { useAuth } from '../context/AuthContext'
 import { useBoletas } from '../hooks/useBoletas'
@@ -12,18 +12,17 @@ import { imprimirBoletaHtml } from '../utils/impresion'
 
 export default function MisBoletas() {
   const { sesion } = useAuth()
-  const { boletas, obtenerBoletasPorCliente, reintentarPagoBoleta } = useBoletas()
-  const [correoFiltro, setCorreoFiltro] = useState('')
+  const { boletas, cargando, error, reintentarPagoBoleta, recargar } = useBoletas({
+    soloMias: true,
+    clienteRun: sesion?.run,
+    correo: sesion?.correo,
+    // Sin sesión no hay RUN/correo con los que filtrar: no se llama a la API.
+    activo: Boolean(sesion)
+  })
   const [boletaParaReintento, setBoletaParaReintento] = useState<Boleta | null>(null)
 
-  // Si hay sesión iniciada, buscar por su RUN y correo; si no, permitir buscar por correo
-  const boletasUsuario = sesion
-    ? obtenerBoletasPorCliente(sesion.run || sesion.correo)
-    : correoFiltro.trim()
-    ? boletas.filter(
-        (b) => b.clienteCorreo.toLowerCase() === correoFiltro.trim().toLowerCase()
-      )
-    : []
+  // El backend filtra /boletas/mis-boletas por los query params clienteRun/correo.
+  const boletasUsuario = boletas
 
   const verDetalleBoleta = (boleta: Boleta) => {
     const boletaHtml = generarHtmlBoleta(boleta)
@@ -53,11 +52,11 @@ export default function MisBoletas() {
     })
   }
 
-  const handleResultadoReintento = (resultado: ResultadoPasarela) => {
+  const handleResultadoReintento = async (resultado: ResultadoPasarela) => {
     if (!boletaParaReintento) {
       return { exito: false, mensaje: 'No hay pedido seleccionado.' }
     }
-    const res = reintentarPagoBoleta(boletaParaReintento.id, resultado)
+    const res = await reintentarPagoBoleta(boletaParaReintento.id, resultado)
     if (res.exito && res.boleta) {
       setBoletaParaReintento(null)
       setTimeout(() => {
@@ -102,40 +101,33 @@ export default function MisBoletas() {
       {!sesion && (
         <Card className="bg-forte-panel border-secondary mb-4 p-3">
           <Card.Body>
-            <Card.Title className="h5 text-accent mb-2">Consulta de compras para invitados</Card.Title>
-            <p className="small text-muted mb-3">
-              ¿Compraste como invitado? Ingresa el correo electrónico que utilizaste al pagar para ver tus boletas:
+            <Card.Title className="h5 text-accent mb-2">Consulta de compras</Card.Title>
+            <p className="small text-muted mb-2">
+              Inicia sesión para consultar tus boletas directamente desde el servidor.
             </p>
-            <Row className="g-2">
-              <Col sm={8} md={6}>
-                <input
-                  type="email"
-                  className="form-control"
-                  placeholder="ejemplo@correo.cl"
-                  value={correoFiltro}
-                  onChange={(e) => setCorreoFiltro(e.target.value)}
-                />
-              </Col>
-              <Col sm={4} md={3}>
-                <Button variant="accent" className="w-100" onClick={() => {}}>
-                  <i className="bi bi-search me-1"></i> Buscar
-                </Button>
-              </Col>
-            </Row>
-            <div className="mt-3">
-              <small className="text-muted">
-                ¿Tienes una cuenta registrada?{' '}
-                <Link to="/login" className="text-accent">
-                  Inicia sesión aquí
-                </Link>{' '}
-                para ver todo tu historial automáticamente.
-              </small>
-            </div>
+            <Link to="/login" className="btn btn-accent btn-sm">
+              <i className="bi bi-box-arrow-in-right me-1"></i> Iniciar sesión
+            </Link>
           </Card.Body>
         </Card>
       )}
 
-      {boletasUsuario.length === 0 ? (
+      {cargando && (
+        <Alert variant="info" className="bg-forte-panel border-secondary">
+          Cargando tus boletas desde el servidor...
+        </Alert>
+      )}
+
+      {!cargando && error && (
+        <Alert variant="warning" className="bg-forte-panel border-secondary">
+          {error}{' '}
+          <Button variant="link" size="sm" onClick={() => void recargar()}>
+            Reintentar
+          </Button>
+        </Alert>
+      )}
+
+      {!cargando && !error && boletasUsuario.length === 0 ? (
         <Alert variant="secondary" className="bg-forte-panel border-secondary text-center py-5">
           <i className="bi bi-receipt display-4 text-muted mb-3 d-block"></i>
           <h2 className="h5 text-light">No registras compras ni boletas emitidas aún</h2>

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Form, Button } from 'react-bootstrap'
-import { FORTEPIANO_KEYS } from '../storage/claves'
-import { Region, Comuna, Usuario } from '../types'
-import { REGIONES_INICIALES, COMUNAS_INICIALES } from '../data/seed'
+import { useAuth } from '../context/AuthContext'
+import { useTablasMaestras } from '../hooks/useTablasMaestras'
 import {
   limpiarRun,
   validarRun,
@@ -16,10 +15,9 @@ import Swal from '../utils/alertas'
 
 export default function Registro() {
   const navigate = useNavigate()
-
-  const [regiones, setRegiones] = useState<Region[]>([])
-  const [comunas, setComunas] = useState<Comuna[]>([])
-  const [guardadoExitoso, setGuardadoExitoso] = useState(false)
+  const { registro } = useAuth()
+  const { regiones, comunas } = useTablasMaestras()
+  const [procesando, setProcesando] = useState(false)
 
   const [formData, setFormData] = useState({
     run: '',
@@ -34,18 +32,6 @@ export default function Registro() {
   })
 
   const [tocado, setTocado] = useState<Record<string, boolean>>({})
-
-  useEffect(() => {
-    try {
-      const rawRegiones = localStorage.getItem(FORTEPIANO_KEYS.regiones)
-      const rawComunas = localStorage.getItem(FORTEPIANO_KEYS.comunas)
-      setRegiones(rawRegiones ? JSON.parse(rawRegiones) : REGIONES_INICIALES)
-      setComunas(rawComunas ? JSON.parse(rawComunas) : COMUNAS_INICIALES)
-    } catch {
-      setRegiones(REGIONES_INICIALES)
-      setComunas(COMUNAS_INICIALES)
-    }
-  }, [])
 
   const comunasFiltradas = comunas.filter(
     (c) => c.regionId === Number(formData.regionId)
@@ -65,23 +51,8 @@ export default function Registro() {
     setTocado((prev) => ({ ...prev, [campo]: true }))
   }
 
-  // Comprobar si el RUN ya existe
-  const obtenerUsuarios = (): Usuario[] => {
-    try {
-      const raw = localStorage.getItem(FORTEPIANO_KEYS.usuarios)
-      return raw ? JSON.parse(raw) : []
-    } catch {
-      return []
-    }
-  }
-
   const runLimpio = limpiarRun(formData.run)
-  const runFormatoValido = validarRun(formData.run)
-  const runEsDuplicado =
-    !guardadoExitoso &&
-    runFormatoValido &&
-    obtenerUsuarios().some((u) => limpiarRun(u.run) === runLimpio)
-  const runValido = runFormatoValido && !runEsDuplicado
+  const runValido = validarRun(formData.run)
 
   const nombreValido = textoRequerido(formData.nombre, 50)
   const apellidosValido = textoRequerido(formData.apellidos, 100)
@@ -91,7 +62,7 @@ export default function Registro() {
   const comunaValida = formData.comunaId !== ''
   const direccionValida = textoRequerido(formData.direccion, 300)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     const todosTocados: Record<string, boolean> = {
@@ -107,17 +78,8 @@ export default function Registro() {
     }
     setTocado(todosTocados)
 
-    const esFormatoRunValido = validarRun(formData.run)
-    const usuariosActuales = obtenerUsuarios()
-    const existeDuplicado =
-      esFormatoRunValido &&
-      usuariosActuales.some((u) => limpiarRun(u.run) === runLimpio)
-
-    if (!esFormatoRunValido || existeDuplicado) {
-      const detalleErrorRun = existeDuplicado
-        ? 'El RUN ingresado ya se encuentra registrado.'
-        : obtenerMensajeErrorRun(formData.run)
-      Swal.fire('RUN inválido', detalleErrorRun, 'error')
+    if (!validarRun(formData.run)) {
+      Swal.fire('RUN inválido', obtenerMensajeErrorRun(formData.run), 'error')
       return
     }
 
@@ -134,31 +96,27 @@ export default function Registro() {
       return
     }
 
-    const nuevoUsuario: Usuario = {
+    setProcesando(true)
+    const res = await registro({
       run: runLimpio,
       nombre: formData.nombre.trim(),
       apellidos: formData.apellidos.trim(),
       correo: formData.correo.trim(),
       password: formData.password,
-      fechaNacimiento: formData.fechaNacimiento || '',
-      rolId: 3, // Cliente
+      fechaNacimiento: formData.fechaNacimiento || undefined,
       regionId: Number(formData.regionId),
       comunaId: Number(formData.comunaId),
-      direccion: formData.direccion.trim(),
-      estado: 'Activo'
+      direccion: formData.direccion.trim()
+    })
+    setProcesando(false)
+
+    if (!res.exito) {
+      Swal.fire('No se pudo registrar', res.mensaje || 'Revisa los datos e inténtalo nuevamente.', 'error')
+      return
     }
 
-    setGuardadoExitoso(true)
-    usuariosActuales.push(nuevoUsuario)
-    localStorage.setItem(FORTEPIANO_KEYS.usuarios, JSON.stringify(usuariosActuales))
-    window.dispatchEvent(
-      new CustomEvent('fortepiano_storage_change', {
-        detail: { clave: FORTEPIANO_KEYS.usuarios }
-      })
-    )
-
-    Swal.fire('Correcto', 'Usuario registrado correctamente.', 'success').then(() => {
-      navigate('/login')
+    Swal.fire('Correcto', res.mensaje || 'Usuario registrado correctamente.', 'success').then(() => {
+      navigate(res.sesion ? '/' : '/login')
     })
   }
 
@@ -187,9 +145,7 @@ export default function Registro() {
                       isInvalid={tocado.run && !runValido}
                     />
                     <Form.Control.Feedback type="invalid">
-                      {runEsDuplicado
-                        ? 'El RUN ingresado ya se encuentra registrado.'
-                        : obtenerMensajeErrorRun(formData.run)}
+                      {obtenerMensajeErrorRun(formData.run)}
                     </Form.Control.Feedback>
                   </Form.Group>
                 </div>
@@ -349,8 +305,8 @@ export default function Registro() {
                 </div>
               </div>
 
-              <Button type="submit" className="btn btn-accent w-100 mt-4">
-                Registrar
+              <Button type="submit" className="btn btn-accent w-100 mt-4" disabled={procesando}>
+                {procesando ? 'Registrando en el servidor...' : 'Registrar'}
               </Button>
 
               <p className="text-center mt-3 mb-0 small text-muted">

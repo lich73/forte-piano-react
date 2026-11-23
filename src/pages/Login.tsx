@@ -12,11 +12,12 @@ export default function Login() {
   const [correo, setCorreo] = useState('')
   const [password, setPassword] = useState('')
   const [tocado, setTocado] = useState({ correo: false, password: false })
+  const [procesando, setProcesando] = useState(false)
 
   const correoValido = validarCorreo(correo)
   const passwordValido = validarPassword(password)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setTocado({ correo: true, password: true })
 
@@ -25,7 +26,10 @@ export default function Login() {
       return
     }
 
-    const res = login(correo, password)
+    setProcesando(true)
+    const res = await login(correo, password)
+    setProcesando(false)
+
     if (!res.exito) {
       if (res.mensaje?.includes('deshabilitada')) {
         Swal.fire('Cuenta inactiva', res.mensaje, 'warning')
@@ -86,8 +90,8 @@ export default function Login() {
                 </Form.Control.Feedback>
               </Form.Group>
 
-              <Button type="submit" className="btn btn-accent w-100">
-                Iniciar sesión
+              <Button type="submit" className="btn btn-accent w-100" disabled={procesando}>
+                {procesando ? 'Conectando con el servidor...' : 'Iniciar sesión'}
               </Button>
             </Form>
 

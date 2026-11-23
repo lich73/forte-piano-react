@@ -69,10 +69,12 @@ export default function AdminBoletas() {
       confirmButtonText: 'Sí, anular',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#dc3545'
-    }).then((res) => {
+    }).then(async (res) => {
       if (res.isConfirmed) {
-        anularBoleta(boleta.id)
-        Swal.fire('Boleta Anulada', `La boleta N° ${boleta.folio} fue anulada.`, 'success')
+        const ok = await anularBoleta(boleta.id)
+        if (ok) {
+          Swal.fire('Boleta Anulada', `La boleta N° ${boleta.folio} fue anulada.`, 'success')
+        }
       }
     })
   }

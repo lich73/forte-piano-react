@@ -1,14 +1,22 @@
 import { useCallback } from 'react'
-import { FORTEPIANO_KEYS } from '../storage/claves'
-import { useColeccion } from '../storage/useColeccion'
-import { Usuario } from '../types'
+import { usuariosApi } from '../services/api'
+import type { Usuario } from '../types'
 import { limpiarRun, validarRun } from '../utils/validaciones'
+import { useApiLista } from './useApiLista'
 
-/**
- * Hook para consultar y gestionar los usuarios del sistema.
- */
-export function useUsuarios() {
-  const { datos: usuarios, guardar, recargar } = useColeccion<Usuario>(FORTEPIANO_KEYS.usuarios)
+export interface OpcionesUsuarios {
+  /** Si es false no se llama a /usuarios (endpoint exclusivo de ADMIN). */
+  activo?: boolean
+}
+
+/** Usuarios obtenidos desde /api/v1/usuarios (requiere rol ADMIN). */
+export function useUsuarios(opciones: OpcionesUsuarios = {}) {
+  const { activo = true } = opciones
+  const { datos: usuarios, cargando, error, recargar, setDatos } = useApiLista<Usuario>(
+    () => usuariosApi.listar(),
+    'usuarios',
+    activo
+  )
 
   const obtenerUsuarioPorRun = useCallback(
     (run: string): Usuario | undefined => {
@@ -19,36 +27,53 @@ export function useUsuarios() {
   )
 
   const guardarUsuario = useCallback(
-    (usuario: Usuario): boolean => {
-      if (!validarRun(usuario.run)) {
+    async (usuario: Usuario): Promise<boolean> => {
+      if (!validarRun(usuario.run)) return false
+
+      const runNormalizado = limpiarRun(usuario.run)
+      const usuarioNormalizado = { ...usuario, run: runNormalizado }
+      const existe = usuarios.some((u) => limpiarRun(u.run) === runNormalizado)
+
+      try {
+        const guardado = existe
+          ? await usuariosApi.actualizar(runNormalizado, usuarioNormalizado)
+          : await usuariosApi.crear(usuarioNormalizado)
+
+        setDatos((prev) => {
+          const index = prev.findIndex((u) => limpiarRun(u.run) === runNormalizado)
+          if (index >= 0) {
+            const actualizados = [...prev]
+            actualizados[index] = guardado
+            return actualizados
+          }
+          return [guardado, ...prev]
+        })
+        return true
+      } catch {
         return false
       }
-      guardar((prev) => {
-        const runNormalizado = limpiarRun(usuario.run)
-        const usuarioNormalizado = { ...usuario, run: runNormalizado }
-        const index = prev.findIndex((u) => limpiarRun(u.run) === runNormalizado)
-        if (index >= 0) {
-          const actualizados = [...prev]
-          actualizados[index] = usuarioNormalizado
-          return actualizados
-        }
-        return [...prev, usuarioNormalizado]
-      })
-      return true
     },
-    [guardar]
+    [usuarios, setDatos]
   )
 
   const eliminarUsuario = useCallback(
-    (run: string) => {
+    async (run: string): Promise<boolean> => {
       const runNormalizado = limpiarRun(run)
-      guardar((prev) => prev.filter((u) => limpiarRun(u.run) !== runNormalizado))
+      try {
+        await usuariosApi.eliminar(runNormalizado)
+        setDatos((prev) => prev.filter((u) => limpiarRun(u.run) !== runNormalizado))
+        return true
+      } catch {
+        return false
+      }
     },
-    [guardar]
+    [setDatos]
   )
 
   return {
     usuarios,
+    cargando,
+    error,
     obtenerUsuarioPorRun,
     guardarUsuario,
     eliminarUsuario,

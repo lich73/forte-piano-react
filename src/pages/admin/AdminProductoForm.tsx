@@ -147,7 +147,7 @@ export default function AdminProductoForm() {
       porcentajeNum >= 1 &&
       porcentajeNum <= 99)
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
     setTocado({
@@ -190,7 +190,11 @@ export default function AdminProductoForm() {
       precioOferta: enOferta ? Math.round(precioOfertaNum) : null
     }
 
-    guardarProducto(productoGuardar)
+    const guardado = await guardarProducto(productoGuardar)
+    if (!guardado) {
+      alertaError('Error', 'No se pudo guardar el producto en el servidor.')
+      return
+    }
 
     let mensajeExtra = ''
     if (

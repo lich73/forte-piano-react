@@ -39,8 +39,10 @@ export default function AdminUsuarios() {
     )
 
     if (confirmacion.isConfirmed) {
-      eliminarUsuario(run)
-      alertaExito('Eliminado', 'El usuario fue eliminado correctamente.')
+      const ok = await eliminarUsuario(run)
+      if (ok) {
+        alertaExito('Eliminado', 'El usuario fue eliminado correctamente.')
+      }
     }
   }
 

@@ -1,13 +1,10 @@
 import { useState, FormEvent } from 'react'
 import { Container, Row, Col, Form, Button } from 'react-bootstrap'
-import { FORTEPIANO_KEYS } from '../storage/claves'
-import { useColeccion } from '../storage/useColeccion'
-import { Mensaje } from '../types'
+import { contactosApi, mensajeDeError } from '../services/api'
 import { textoRequerido, validarCorreo } from '../utils/validaciones'
 import { alertaExito, alertaError } from '../utils/alertas'
 
 export default function Contacto() {
-  const { datos: contactos, guardar } = useColeccion<Mensaje>(FORTEPIANO_KEYS.contactos)
 
   const [nombre, setNombre] = useState('')
   const [correo, setCorreo] = useState('')
@@ -23,7 +20,7 @@ export default function Contacto() {
   const correoValido = validarCorreo(correo)
   const comentarioValido = textoRequerido(comentario, 500)
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
     // Marcar todos los campos como tocados
@@ -38,16 +35,17 @@ export default function Contacto() {
       return
     }
 
-    const nuevoMensaje: Mensaje = {
-      nombre: nombre.trim(),
-      correo: correo.trim(),
-      comentario: comentario.trim(),
-      fecha: new Date().toISOString().slice(0, 10)
+    try {
+      await contactosApi.enviar({
+        nombre: nombre.trim(),
+        correo: correo.trim(),
+        comentario: comentario.trim()
+      })
+      alertaExito('Mensaje enviado', 'Gracias por escribirnos, te responderemos pronto.')
+    } catch (e) {
+      alertaError('No se pudo enviar', mensajeDeError(e))
+      return
     }
-
-    guardar([...contactos, nuevoMensaje])
-
-    alertaExito('Mensaje enviado', 'Gracias por escribirnos, te responderemos pronto.')
 
     // Limpiar formulario y estados tocados
     setNombre('')

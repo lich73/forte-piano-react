@@ -34,7 +34,7 @@ describe('Tests Varios - 4. Categoría: EVENT (Eventos)', () => {
     await act(async () => {
       root.render(
         <MemoryRouter>
-          <CartProvider>
+          <CartProvider productos={PRODUCTOS_INICIALES}>
             <ProductCard producto={productoDemo} />
           </CartProvider>
         </MemoryRouter>

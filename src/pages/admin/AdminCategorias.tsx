@@ -1,15 +1,13 @@
 import React, { useState, useMemo } from 'react'
 import { Card, Row, Col, Form, Button, Table, Badge } from 'react-bootstrap'
 import Swal from 'sweetalert2'
-import { FORTEPIANO_KEYS } from '../../storage/claves'
-import { useColeccion } from '../../storage/useColeccion'
-import { Categoria, Producto } from '../../types'
+import { Categoria } from '../../types'
+import { useProductos } from '../../hooks/useProductos'
+import { useTablasMaestras } from '../../hooks/useTablasMaestras'
 
 export default function AdminCategorias() {
-  const { datos: categorias, guardar: guardarCategorias } = useColeccion<Categoria>(
-    FORTEPIANO_KEYS.categorias
-  )
-  const { datos: productos } = useColeccion<Producto>(FORTEPIANO_KEYS.productos)
+  const { categorias, guardarCategoria, eliminarCategoria } = useTablasMaestras()
+  const { productos } = useProductos()
 
   const [nombreNueva, setNombreNueva] = useState('')
   const [errorNombre, setErrorNombre] = useState('')
@@ -23,7 +21,7 @@ export default function AdminCategorias() {
     return mapa
   }, [productos])
 
-  const handleCrearCategoria = (e: React.FormEvent) => {
+  const handleCrearCategoria = async (e: React.FormEvent) => {
     e.preventDefault()
     const nombreLimpio = nombreNueva.trim()
 
@@ -46,13 +44,12 @@ export default function AdminCategorias() {
       return
     }
 
-    const maxId = categorias.reduce((max, c) => (c.id > max ? c.id : max), 0)
-    const nuevaCat: Categoria = {
-      id: maxId + 1,
-      nombre: nombreLimpio
+    const creada = await guardarCategoria(nombreLimpio)
+    if (!creada) {
+      setErrorNombre('No se pudo crear la categoría en el servidor.')
+      return
     }
 
-    guardarCategorias((prev) => [...prev, nuevaCat])
     setNombreNueva('')
     setErrorNombre('')
 
@@ -84,10 +81,16 @@ export default function AdminCategorias() {
       confirmButtonText: 'Sí, eliminar',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#dc3545'
-    }).then((res) => {
+    }).then(async (res) => {
       if (res.isConfirmed) {
-        guardarCategorias((prev) => prev.filter((c) => c.id !== cat.id))
-        Swal.fire('Eliminada', 'La categoría fue eliminada con éxito.', 'success')
+        const ok = await eliminarCategoria(cat.id)
+        Swal.fire(
+          ok ? 'Eliminada' : 'No se pudo eliminar',
+          ok
+            ? 'La categoría fue eliminada con éxito.'
+            : 'El servidor rechazó la eliminación.',
+          ok ? 'success' : 'error'
+        )
       }
     })
   }

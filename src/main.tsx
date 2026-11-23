@@ -4,11 +4,8 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 import './estilos.css'
 import App from './App'
-import { inicializarDatos } from './data/seed'
 
-// Inicializar base de datos simulada en localStorage antes del primer render
-inicializarDatos()
-
+// Los datos de dominio se cargan desde el backend (/api/v1). No se siembra localStorage.
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

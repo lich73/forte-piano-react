@@ -1,33 +1,41 @@
 import { useCallback } from 'react'
-import { FORTEPIANO_KEYS } from '../storage/claves'
-import { useColeccion } from '../storage/useColeccion'
-import { Boleta, ItemBoleta, EstadoPedido, ResultadoPasarela, Producto } from '../types'
+import { boletasApi, mensajeDeError, obtenerSesionGuardada, obtenerTokenJwt } from '../services/api'
+import type {
+  Boleta,
+  CheckoutRequest,
+  DatosEnvio,
+  ResultadoPasarela
+} from '../types'
+import { useApiLista } from './useApiLista'
 
-export interface DatosNuevaBoleta {
+export interface OpcionesBoletas {
+  /** true → GET /boletas/mis-boletas (CLIENTE); false → GET /boletas (ADMIN/VENDEDOR). */
+  soloMias?: boolean
   clienteRun?: string
-  clienteNombre: string
-  clienteCorreo: string
-  items: ItemBoleta[]
-  total: number
-  metodoPago?: string
-  estado?: EstadoPedido
+  correo?: string
+  /** Permite evitar la petición mientras no hay sesión con la que filtrar. */
+  activo?: boolean
 }
 
-/**
- * Hook para la emisión, consulta, actualización de estado e historial de boletas y pedidos.
- */
-export function useBoletas() {
-  const { datos: boletas, guardar, recargar } = useColeccion<Boleta>(FORTEPIANO_KEYS.boletas)
+/** Boletas y pedidos leídos siempre desde la API REST. */
+export function useBoletas(opciones: OpcionesBoletas = {}) {
+  const { soloMias = false, clienteRun, correo, activo = true } = opciones
+  const clave = `${soloMias ? 'mias' : 'todas'}|${clienteRun || ''}|${correo || ''}`
 
-  // Obtener una boleta por su ID único
+  const { datos: boletas, cargando, error, recargar, setDatos } = useApiLista<Boleta>(
+    () =>
+      soloMias
+        ? boletasApi.misBoletas(clienteRun, correo)
+        : boletasApi.listar(clienteRun),
+    clave,
+    activo
+  )
+
   const obtenerBoleta = useCallback(
-    (id: string): Boleta | undefined => {
-      return boletas.find((b) => b.id === id)
-    },
+    (id: string): Boleta | undefined => boletas.find((b) => b.id === id),
     [boletas]
   )
 
-  // Obtener boletas de un cliente por su RUN o correo electrónico
   const obtenerBoletasPorCliente = useCallback(
     (identificador: string): Boleta[] => {
       const idLimpio = identificador.trim().toLowerCase()
@@ -42,122 +50,85 @@ export function useBoletas() {
     [boletas]
   )
 
-  // Emitir una nueva boleta tras un pago
-  const emitirBoleta = useCallback(
-    (datos: DatosNuevaBoleta): Boleta => {
-      const ultimoFolio = boletas.reduce((max, b) => (b.folio > max ? b.folio : max), 1000)
-      const nuevoFolio = ultimoFolio + 1
-
-      const subtotalNeto = Math.round(datos.total / 1.19)
-      const iva = datos.total - subtotalNeto
-
-      const ahora = new Date()
-      const fechaLegible = ahora.toLocaleString('es-CL', {
-        dateStyle: 'short',
-        timeStyle: 'medium'
-      })
-
-      const nuevaBoleta: Boleta = {
-        id: `BOL-${Date.now()}-${nuevoFolio}`,
-        folio: nuevoFolio,
-        fecha: fechaLegible,
-        clienteRun: datos.clienteRun || undefined,
-        clienteNombre: datos.clienteNombre || 'Cliente General',
-        clienteCorreo: datos.clienteCorreo || 'cliente@fortepiano.cl',
-        items: datos.items,
-        subtotalNeto,
-        iva,
-        total: datos.total,
-        metodoPago: datos.metodoPago || 'Tarjeta de Débito / Webpay Plus',
-        estado: datos.estado || 'Emitida'
-      }
-
-      guardar((prev) => [nuevaBoleta, ...prev])
-      return nuevaBoleta
-    },
-    [boletas, guardar]
-  )
-
-  // Actualizar estado de un pedido/boleta según resultado de pasarela
+  /**
+   * Reintento de pago. Se usa POST /boletas/checkout con `boletaExistenteId`
+   * porque el PUT /boletas/{id}/reintentar-pago está restringido a ADMIN/VENDEDOR.
+   */
   const reintentarPagoBoleta = useCallback(
-    (
+    async (
       id: string,
       resultado: ResultadoPasarela
-    ): { exito: boolean; boleta?: Boleta; mensaje: string } => {
+    ): Promise<{ exito: boolean; boleta?: Boleta; mensaje: string }> => {
       const actual = boletas.find((b) => b.id === id)
       if (!actual) {
         return { exito: false, mensaje: 'Pedido no encontrado.' }
       }
 
-      const nuevoEstado: EstadoPedido =
-        resultado === 'exitoso'
-          ? 'Emitida'
-          : resultado === 'rechazado'
-          ? 'Rechazada'
-          : 'Pendiente'
-
-      const mensaje =
-        resultado === 'exitoso'
-          ? 'Pago confirmado exitosamente. Tu boleta ha sido emitida.'
-          : resultado === 'rechazado'
-          ? 'La transacción fue rechazada por la entidad bancaria.'
-          : 'Problema temporal de conexión. Puedes volver a intentarlo más tarde.'
-
-      // Si pasa a Emitida desde otro estado, descontar stock
-      if (resultado === 'exitoso' && actual.estado !== 'Emitida') {
-        try {
-          const rawProds = localStorage.getItem(FORTEPIANO_KEYS.productos)
-          const prods: Producto[] = rawProds ? JSON.parse(rawProds) : []
-          const actualizados = prods.map((p) => {
-            const item = actual.items.find((i) => i.codigo === p.codigo)
-            if (item) {
-              return { ...p, stock: Math.max(0, p.stock - item.cantidad) }
-            }
-            return p
-          })
-          localStorage.setItem(FORTEPIANO_KEYS.productos, JSON.stringify(actualizados))
-          window.dispatchEvent(
-            new CustomEvent('fortepiano_storage_change', {
-              detail: { clave: FORTEPIANO_KEYS.productos }
-            })
-          )
-        } catch {
-          // continuar
+      const sesion = obtenerSesionGuardada()
+      if (!sesion || !obtenerTokenJwt() || sesion.rolId === 2) {
+        return {
+          exito: false,
+          mensaje: 'Tu sesión no permite realizar pagos. Ingresa con una cuenta de Cliente o Administrador.'
         }
       }
 
-      const boletaActualizada: Boleta = {
-        ...actual,
-        estado: nuevoEstado,
-        mensajeTransaccion: mensaje
+      const datosEnvio: DatosEnvio = actual.datosEnvio || {
+        modalidad: 'retiro_tienda',
+        destinatario: actual.clienteNombre,
+        regionNombre: '-',
+        comunaNombre: '-',
+        direccion: '-'
       }
 
-      guardar((prev) => prev.map((b) => (b.id === id ? boletaActualizada : b)))
+      const request: CheckoutRequest = {
+        clienteRun: actual.clienteRun,
+        clienteNombre: actual.clienteNombre,
+        clienteCorreo: actual.clienteCorreo,
+        metodoPago: actual.metodoPago,
+        datosEnvio,
+        items: actual.items.map((item) => ({ codigo: item.codigo, cantidad: item.cantidad })),
+        resultadoTransaccion: resultado,
+        boletaExistenteId: id
+      }
 
-      return {
-        exito: resultado === 'exitoso',
-        boleta: boletaActualizada,
-        mensaje
+      try {
+        const boleta = await boletasApi.checkout(request)
+        setDatos((prev) => prev.map((b) => (b.id === id ? boleta : b)))
+        return {
+          exito: boleta.estado === 'Emitida',
+          boleta,
+          mensaje:
+            boleta.mensajeTransaccion ||
+            (boleta.estado === 'Emitida'
+              ? 'Pago confirmado exitosamente. Tu boleta ha sido emitida.'
+              : 'El pago no pudo completarse. Puedes volver a intentarlo.')
+        }
+      } catch (e) {
+        return { exito: false, mensaje: mensajeDeError(e) }
       }
     },
-    [boletas, guardar]
+    [boletas, setDatos]
   )
 
-  // Anular boleta (función administrativa)
   const anularBoleta = useCallback(
-    (id: string) => {
-      guardar((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, estado: 'Anulada' as const } : b))
-      )
+    async (id: string): Promise<boolean> => {
+      try {
+        const anulada = await boletasApi.anular(id)
+        setDatos((prev) => prev.map((b) => (b.id === id ? anulada : b)))
+        return true
+      } catch {
+        return false
+      }
     },
-    [guardar]
+    [setDatos]
   )
 
   return {
     boletas,
+    cargando,
+    error,
     obtenerBoleta,
     obtenerBoletasPorCliente,
-    emitirBoleta,
     reintentarPagoBoleta,
     anularBoleta,
     recargar

@@ -5,8 +5,8 @@ import { useAuth } from '../../context/AuthContext'
 import { useProductos } from '../../hooks/useProductos'
 import { useUsuarios } from '../../hooks/useUsuarios'
 import { useBoletas } from '../../hooks/useBoletas'
-import { useColeccion } from '../../storage/useColeccion'
-import { FORTEPIANO_KEYS } from '../../storage/claves'
+import { useApiLista } from '../../hooks/useApiLista'
+import { contactosApi } from '../../services/api'
 import { Mensaje, EstadoPedido } from '../../types'
 import { useTablasMaestras } from '../../hooks/useTablasMaestras'
 import { formatearPrecio, tieneOfertaActiva } from '../../utils/formato'
@@ -23,9 +23,10 @@ interface SegmentoDonut {
 export default function AdminDashboard() {
   const { sesion } = useAuth()
   const { productos } = useProductos()
-  const { usuarios } = useUsuarios()
+  // GET /usuarios es exclusivo de ADMIN; el dashboard también lo ve VENDEDOR.
+  const { usuarios } = useUsuarios({ activo: sesion?.rolId === 1 })
   const { boletas } = useBoletas()
-  const { datos: contactos } = useColeccion<Mensaje>(FORTEPIANO_KEYS.contactos)
+  const { datos: contactos } = useApiLista<Mensaje>(() => contactosApi.listar())
   const { obtenerNombreRol } = useTablasMaestras()
 
   const nombreRol = sesion ? obtenerNombreRol(sesion.rolId) : ''
