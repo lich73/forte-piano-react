@@ -1,13 +1,20 @@
-import React, { createContext, useContext, useState, useMemo, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import Swal from 'sweetalert2'
 import { FORTEPIANO_KEYS } from '../storage/claves'
 import {
+  boletasApi,
+  mensajeDeError,
+  obtenerSesionGuardada,
+  obtenerTokenJwt,
+  productosApi
+} from '../services/api'
+import type {
+  Boleta,
+  CheckoutRequest,
+  DatosCheckout,
   ItemCarrito,
   Producto,
-  DatosCheckout,
-  Boleta,
-  ResultadoPasarela,
-  EstadoPedido
+  ResultadoPasarela
 } from '../types'
 import { formatearPrecio, obtenerPrecioEfectivo } from '../utils/formato'
 import { imprimirBoletaHtml } from '../utils/impresion'
@@ -17,21 +24,28 @@ export interface ItemCarritoConDetalle extends ItemCarrito {
   subtotal: number
 }
 
+interface CartProviderProps {
+  children?: React.ReactNode
+  /** Permite inyectar productos en pruebas; en la app siempre se cargan desde la API. */
+  productos?: Producto[]
+}
+
 interface CartContextValue {
   carrito: ItemCarrito[]
   itemsConDetalle: ItemCarritoConDetalle[]
   totalItems: number
   total: number
+  cargandoProductos: boolean
   agregar: (codigo: string, cantidad?: number) => boolean
   cambiarCantidad: (codigo: string, delta: number) => void
   eliminar: (codigo: string) => Promise<boolean>
   vaciar: () => void
-  finalizarCompra: (datosCheckout?: DatosCheckout) => void
+  finalizarCompra: (datosCheckout?: DatosCheckout) => Promise<void>
   procesarPagoPasarela: (
     datosCheckout: DatosCheckout,
     resultado: ResultadoPasarela,
     pedidoExistenteId?: string
-  ) => { exito: boolean; boleta?: Boleta; mensaje: string }
+  ) => Promise<{ exito: boolean; boleta?: Boleta; mensaje: string }>
 }
 
 const CartContext = createContext<CartContextValue | undefined>(undefined)
@@ -165,7 +179,7 @@ export function mostrarModalBoletaEmitida(boleta: Boleta) {
   })
 }
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
+export function CartProvider({ children, productos: productosInyectados }: CartProviderProps) {
   const [carrito, setCarrito] = useState<ItemCarrito[]>(() => {
     try {
       const guardado = localStorage.getItem(FORTEPIANO_KEYS.carrito)
@@ -175,54 +189,73 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   })
 
-  // Obtener la lista más reciente de productos desde localStorage
-  const obtenerProductos = useCallback((): Producto[] => {
-    try {
-      const prods = localStorage.getItem(FORTEPIANO_KEYS.productos)
-      return prods ? (JSON.parse(prods) as Producto[]) : []
-    } catch {
-      return []
-    }
-  }, [])
+  const [productos, setProductos] = useState<Producto[]>(productosInyectados ?? [])
+  const [cargandoProductos, setCargandoProductos] = useState(!productosInyectados)
 
-  // Guardar en localStorage cada vez que cambia el carrito
+  // Catálogo desde MySQL. El carrito se guarda en localStorage; los productos no.
+  useEffect(() => {
+    if (productosInyectados) {
+      setProductos(productosInyectados)
+      setCargandoProductos(false)
+      return
+    }
+
+    let activo = true
+    productosApi
+      .listar()
+      .then((datos) => {
+        if (activo) setProductos(datos)
+      })
+      .catch(() => {
+        if (activo) setProductos([])
+      })
+      .finally(() => {
+        if (activo) setCargandoProductos(false)
+      })
+
+    return () => {
+      activo = false
+    }
+  }, [productosInyectados])
+
   const guardarCarrito = (nuevoCarrito: ItemCarrito[]) => {
     localStorage.setItem(FORTEPIANO_KEYS.carrito, JSON.stringify(nuevoCarrito))
     setCarrito(nuevoCarrito)
   }
 
-  // Items enriquecidos con su producto y subtotal
-  const itemsConDetalle = useMemo<ItemCarritoConDetalle[]>(() => {
-    const productos = obtenerProductos()
-    return carrito.map((item) => {
-      const producto = productos.find((p) => p.codigo === item.codigo)
-      const subtotal = producto ? obtenerPrecioEfectivo(producto) * item.cantidad : 0
-      return {
-        ...item,
-        producto,
-        subtotal
-      }
-    })
-  }, [carrito, obtenerProductos])
+  const itemsConDetalle = useMemo<ItemCarritoConDetalle[]>(
+    () =>
+      carrito.map((item) => {
+        const producto = productos.find((p) => p.codigo === item.codigo)
+        return {
+          ...item,
+          producto,
+          subtotal: producto ? obtenerPrecioEfectivo(producto) * item.cantidad : 0
+        }
+      }),
+    [carrito, productos]
+  )
 
-  const totalItems = useMemo(() => {
-    return carrito.reduce((acumulado, item) => acumulado + item.cantidad, 0)
-  }, [carrito])
+  const totalItems = useMemo(
+    () => carrito.reduce((acumulado, item) => acumulado + item.cantidad, 0),
+    [carrito]
+  )
 
-  const total = useMemo(() => {
-    return itemsConDetalle.reduce((acumulado, item) => acumulado + item.subtotal, 0)
-  }, [itemsConDetalle])
+  const total = useMemo(
+    () => itemsConDetalle.reduce((acumulado, item) => acumulado + item.subtotal, 0),
+    [itemsConDetalle]
+  )
 
-  // Agrega un producto al carrito respetando el stock disponible
   const agregar = (codigo: string, cantidad = 1): boolean => {
-    const productos = obtenerProductos()
     const producto = productos.find((p) => p.codigo === codigo)
 
     if (!producto) {
       Swal.fire({
-        title: 'Error',
-        text: 'Producto no encontrado.',
-        icon: 'error',
+        title: cargandoProductos ? 'Cargando catálogo' : 'Error',
+        text: cargandoProductos
+          ? 'Espera un momento mientras se cargan los productos desde el servidor.'
+          : 'Producto no encontrado.',
+        icon: cargandoProductos ? 'info' : 'error',
         confirmButtonText: 'Aceptar'
       })
       return false
@@ -252,14 +285,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return false
     }
 
-    let nuevoCarrito: ItemCarrito[]
-    if (itemExistente) {
-      nuevoCarrito = carrito.map((i) =>
-        i.codigo === codigo ? { ...i, cantidad: cantidadFinal } : i
-      )
-    } else {
-      nuevoCarrito = [...carrito, { codigo, cantidad }]
-    }
+    const nuevoCarrito = itemExistente
+      ? carrito.map((i) => (i.codigo === codigo ? { ...i, cantidad: cantidadFinal } : i))
+      : [...carrito, { codigo, cantidad }]
 
     guardarCarrito(nuevoCarrito)
     Swal.fire({
@@ -271,9 +299,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return true
   }
 
-  // Modifica la cantidad de un ítem con un delta (+1 o -1)
   const cambiarCantidad = (codigo: string, delta: number) => {
-    const productos = obtenerProductos()
     const producto = productos.find((p) => p.codigo === codigo)
     const item = carrito.find((i) => i.codigo === codigo)
 
@@ -282,7 +308,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const nuevaCantidad = item.cantidad + delta
 
     if (nuevaCantidad <= 0) {
-      eliminar(codigo)
+      void eliminar(codigo)
       return
     }
 
@@ -296,13 +322,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    const nuevoCarrito = carrito.map((i) =>
-      i.codigo === codigo ? { ...i, cantidad: nuevaCantidad } : i
+    guardarCarrito(
+      carrito.map((i) => (i.codigo === codigo ? { ...i, cantidad: nuevaCantidad } : i))
     )
-    guardarCarrito(nuevoCarrito)
   }
 
-  // Elimina un ítem del carrito previa confirmación
   const eliminar = async (codigo: string): Promise<boolean> => {
     const resultado = await Swal.fire({
       title: '¿Eliminar producto?',
@@ -314,8 +338,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     })
 
     if (resultado.isConfirmed) {
-      const nuevoCarrito = carrito.filter((i) => i.codigo !== codigo)
-      guardarCarrito(nuevoCarrito)
+      guardarCarrito(carrito.filter((i) => i.codigo !== codigo))
       await Swal.fire({
         title: 'Eliminado',
         text: 'El producto fue eliminado del carrito.',
@@ -327,197 +350,92 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return false
   }
 
-  // Vacía el carrito por completo
-  const vaciar = () => {
-    guardarCarrito([])
-  }
+  const vaciar = () => guardarCarrito([])
 
-  // Procesa un escenario simulado de la pasarela de pagos y actualiza el estado del pedido
-  const procesarPagoPasarela = (
+  /**
+   * Envía el carrito a POST /api/v1/boletas/checkout.
+   * El backend calcula precios, IVA, stock y estado; el frontend no escribe boletas ni stock.
+   */
+  const procesarPagoPasarela = async (
     datosCheckout: DatosCheckout,
     resultado: ResultadoPasarela,
     pedidoExistenteId?: string
-  ): { exito: boolean; boleta?: Boleta; mensaje: string } => {
-    if (carrito.length === 0) {
+  ): Promise<{ exito: boolean; boleta?: Boleta; mensaje: string }> => {
+    if (carrito.length === 0 && !pedidoExistenteId && !datosCheckout.boletaExistenteId) {
       return { exito: false, mensaje: 'El carrito se encuentra vacío.' }
     }
 
-    // 1. Validar stock en tiempo real
-    const productosActuales = obtenerProductos()
-    for (const item of carrito) {
-      const prod = productosActuales.find((p) => p.codigo === item.codigo)
-      if (!prod || prod.stock < item.cantidad) {
-        return {
-          exito: false,
-          mensaje: `Stock insuficiente para "${prod?.nombre ?? item.codigo}". Disponible: ${prod?.stock ?? 0}.`
-        }
+    // El backend exige CLIENTE o ADMIN en POST /boletas/checkout.
+    const sesion = obtenerSesionGuardada()
+    if (!sesion || !obtenerTokenJwt()) {
+      return {
+        exito: false,
+        mensaje: 'Debes iniciar sesión para realizar el pago. El servidor requiere una cuenta válida.'
+      }
+    }
+    if (sesion.rolId === 2) {
+      return {
+        exito: false,
+        mensaje: 'Tu rol de Vendedor no puede realizar compras. Ingresa con una cuenta de Cliente o Administrador.'
       }
     }
 
-    // 2. Determinar estado del pedido y mensaje según escenario seleccionado
-    let nuevoEstado: EstadoPedido = 'Emitida'
-    let mensajeResultado = 'El pago ha sido aprobado y tu boleta electrónica fue emitida con éxito.'
-
-    if (resultado === 'rechazado') {
-      nuevoEstado = 'Rechazada'
-      mensajeResultado =
-        'La entidad emisora rechazó el cargo (fondos insuficientes o límite excedido). La transacción no pudo completarse.'
-    } else if (resultado === 'intentar_mas_tarde') {
-      nuevoEstado = 'Pendiente'
-      mensajeResultado =
-        'El servicio de autorización bancaria presenta intermitencia temporal. Tu pedido quedó en estado Pendiente para que puedas reintentar el pago.'
+    const request: CheckoutRequest = {
+      clienteRun: datosCheckout.clienteRun,
+      clienteNombre: datosCheckout.clienteNombre,
+      clienteApellidos: datosCheckout.clienteApellidos,
+      clienteCorreo: datosCheckout.clienteCorreo,
+      metodoPago: datosCheckout.metodoPago || 'Webpay Plus / Débito',
+      datosEnvio: datosCheckout.datosEnvio,
+      items: carrito.map((item) => ({ codigo: item.codigo, cantidad: item.cantidad })),
+      resultadoTransaccion: resultado,
+      boletaExistenteId: pedidoExistenteId || datosCheckout.boletaExistenteId
     }
 
-    // 3. Cargar boletas existentes
-    let boletasGuardadas: Boleta[] = []
     try {
-      const boletasRaw = localStorage.getItem(FORTEPIANO_KEYS.boletas)
-      if (boletasRaw) {
-        boletasGuardadas = JSON.parse(boletasRaw)
+      const boleta = await boletasApi.checkout(request)
+
+      if (resultado === 'exitoso') {
+        guardarCarrito([])
       }
-    } catch {
-      boletasGuardadas = []
-    }
 
-    const subtotalNeto = Math.round(total / 1.19)
-    const iva = total - subtotalNeto
-    const ahora = new Date()
-    const fechaLegible = ahora.toLocaleString('es-CL', {
-      dateStyle: 'short',
-      timeStyle: 'medium'
-    })
-
-    const itemsBoleta = itemsConDetalle.map((item) => ({
-      codigo: item.codigo,
-      nombre: item.producto?.nombre ?? item.codigo,
-      precioUnitario: obtenerPrecioEfectivo(item.producto),
-      cantidad: item.cantidad,
-      subtotal: item.subtotal
-    }))
-
-    const clienteNombreFinal =
-      `${datosCheckout.clienteNombre} ${datosCheckout.clienteApellidos}`.trim() ||
-      'Cliente General'
-
-    let boletaResultante: Boleta
-    let nuevasBoletas: Boleta[]
-
-    const indiceExistente = pedidoExistenteId
-      ? boletasGuardadas.findIndex((b) => b.id === pedidoExistenteId)
-      : -1
-
-    if (indiceExistente >= 0) {
-      boletaResultante = {
-        ...boletasGuardadas[indiceExistente],
-        fecha: fechaLegible,
-        clienteRun: datosCheckout.clienteRun,
-        clienteNombre: clienteNombreFinal,
-        clienteCorreo: datosCheckout.clienteCorreo,
-        items: itemsBoleta,
-        subtotalNeto,
-        iva,
-        total,
-        metodoPago: datosCheckout.metodoPago || 'Webpay Plus / Débito',
-        estado: nuevoEstado,
-        datosEnvio: datosCheckout.datosEnvio,
-        mensajeTransaccion: mensajeResultado
+      return {
+        exito: boleta.estado === 'Emitida',
+        boleta,
+        mensaje:
+          boleta.mensajeTransaccion ||
+          (boleta.estado === 'Emitida'
+            ? 'El pago ha sido aprobado y tu boleta electrónica fue emitida con éxito.'
+            : 'El pago no pudo completarse. Puedes reintentarlo más tarde.')
       }
-      nuevasBoletas = [...boletasGuardadas]
-      nuevasBoletas[indiceExistente] = boletaResultante
-    } else {
-      const ultimoFolio = boletasGuardadas.reduce(
-        (max, b) => (b.folio > max ? b.folio : max),
-        1000
-      )
-      const nuevoFolio = ultimoFolio + 1
-
-      boletaResultante = {
-        id: `BOL-${Date.now()}-${nuevoFolio}`,
-        folio: nuevoFolio,
-        fecha: fechaLegible,
-        clienteRun: datosCheckout.clienteRun,
-        clienteNombre: clienteNombreFinal,
-        clienteCorreo: datosCheckout.clienteCorreo,
-        items: itemsBoleta,
-        subtotalNeto,
-        iva,
-        total,
-        metodoPago: datosCheckout.metodoPago || 'Webpay Plus / Débito',
-        estado: nuevoEstado,
-        datosEnvio: datosCheckout.datosEnvio,
-        mensajeTransaccion: mensajeResultado
-      }
-      nuevasBoletas = [boletaResultante, ...boletasGuardadas]
-    }
-
-    localStorage.setItem(FORTEPIANO_KEYS.boletas, JSON.stringify(nuevasBoletas))
-    window.dispatchEvent(
-      new CustomEvent('fortepiano_storage_change', {
-        detail: { clave: FORTEPIANO_KEYS.boletas }
-      })
-    )
-
-    // 4. Si el pago fue exitoso, descontar stock y vaciar carrito
-    if (resultado === 'exitoso') {
-      const productosActualizados = productosActuales.map((p) => {
-        const itemEnCarrito = carrito.find((i) => i.codigo === p.codigo)
-        if (itemEnCarrito) {
-          return {
-            ...p,
-            stock: Math.max(0, p.stock - itemEnCarrito.cantidad)
-          }
-        }
-        return p
-      })
-
-      localStorage.setItem(FORTEPIANO_KEYS.productos, JSON.stringify(productosActualizados))
-      window.dispatchEvent(
-        new CustomEvent('fortepiano_storage_change', {
-          detail: { clave: FORTEPIANO_KEYS.productos }
-        })
-      )
-
-      guardarCarrito([])
-    }
-
-    return {
-      exito: resultado === 'exitoso',
-      boleta: boletaResultante,
-      mensaje: mensajeResultado
+    } catch (e) {
+      return { exito: false, mensaje: mensajeDeError(e) }
     }
   }
 
-  // Función directa de compatibilidad
   const finalizarCompra = async (datosCheckout?: DatosCheckout) => {
     if (carrito.length === 0) return
 
-    let sesionActual: { run?: string; nombre?: string; apellidos?: string; correo?: string } | null = null
-    try {
-      const sesionRaw = localStorage.getItem(FORTEPIANO_KEYS.sesion)
-      if (sesionRaw) sesionActual = JSON.parse(sesionRaw)
-    } catch {
-      sesionActual = null
-    }
-
-    const checkoutEfectivo: DatosCheckout = datosCheckout || {
-      clienteRun: sesionActual?.run || '123456785',
-      clienteNombre: sesionActual?.nombre || 'Cliente',
-      clienteApellidos: sesionActual?.apellidos || 'General',
-      clienteCorreo: sesionActual?.correo || 'cliente@gmail.com',
+    const sesion = obtenerSesionGuardada()
+    const checkout: DatosCheckout = datosCheckout || {
+      clienteRun: sesion?.run || '',
+      clienteNombre: sesion?.nombre || 'Cliente',
+      clienteApellidos: sesion?.apellidos || 'General',
+      clienteCorreo: sesion?.correo || 'cliente@gmail.com',
       metodoPago: 'Webpay Plus / Tarjeta de Débito',
       datosEnvio: {
         modalidad: 'retiro_tienda',
-        destinatario: sesionActual?.nombre || 'Cliente General',
-        regionNombre: 'Región Metropolitana',
-        comunaNombre: 'Providencia',
-        direccion: 'Av. Providencia 1234'
+        destinatario: sesion ? `${sesion.nombre} ${sesion.apellidos}`.trim() : 'Cliente General',
+        regionNombre: '-',
+        comunaNombre: '-',
+        direccion: '-'
       }
     }
 
-    const res = procesarPagoPasarela(
-      checkoutEfectivo,
-      checkoutEfectivo.resultadoTransaccion || 'exitoso',
-      checkoutEfectivo.boletaExistenteId
+    const res = await procesarPagoPasarela(
+      checkout,
+      checkout.resultadoTransaccion || 'exitoso',
+      checkout.boletaExistenteId
     )
 
     if (res.exito && res.boleta) {
@@ -532,6 +450,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         itemsConDetalle,
         totalItems,
         total,
+        cargandoProductos,
         agregar,
         cambiarCantidad,
         eliminar,

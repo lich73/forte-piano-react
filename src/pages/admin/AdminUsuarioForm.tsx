@@ -58,7 +58,9 @@ export default function AdminUsuarioForm() {
         setNombre(u.nombre)
         setApellidos(u.apellidos)
         setCorreo(u.correo)
-        setPassword(u.password)
+        // El GET /usuarios devuelve el hash BCrypt. Nunca lo cargues en el campo:
+        // se enviaría de vuelta y el backend lo volvería a codificar.
+        setPassword('')
         setFechaNacimiento(u.fechaNacimiento || '')
         setRolId(String(u.rolId))
         setRegionId(String(u.regionId))
@@ -92,7 +94,9 @@ export default function AdminUsuarioForm() {
   const nombreValido = textoRequerido(nombre, 50)
   const apellidosValido = textoRequerido(apellidos, 100)
   const correoValido = validarCorreo(correo)
-  const passwordValido = validarPassword(password)
+  // En edición, dejar el campo vacío significa "mantener la contraseña actual".
+  const passwordSinCambios = esEdicion && password.trim() === ''
+  const passwordValido = passwordSinCambios || validarPassword(password)
   const rolValido = Boolean(rolId && rolId !== '')
   const regionValida = Boolean(regionId && regionId !== '')
   const comunaValida = Boolean(comunaId && comunaId !== '')
@@ -103,7 +107,7 @@ export default function AdminUsuarioForm() {
     setComunaId('') // Reiniciar comuna al cambiar región
   }
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
 
     setTocado({
@@ -154,7 +158,8 @@ export default function AdminUsuarioForm() {
       nombre: nombre.trim(),
       apellidos: apellidos.trim(),
       correo: correo.trim(),
-      password,
+      // Omitir la clave en edición evita sobrescribir el hash almacenado.
+      ...(password.trim() ? { password } : {}),
       fechaNacimiento: fechaNacimiento || '',
       rolId: Number(rolId),
       regionId: Number(regionId),
@@ -164,10 +169,10 @@ export default function AdminUsuarioForm() {
     }
 
     setGuardadoExitoso(true)
-    const guardado = guardarUsuario(usuarioGuardar)
+    const guardado = await guardarUsuario(usuarioGuardar)
     if (!guardado) {
       setGuardadoExitoso(false)
-      alertaError('RUN inválido', obtenerMensajeErrorRun(run))
+      alertaError('Error', 'No se pudo guardar el usuario en el servidor.')
       return
     }
 
@@ -273,18 +278,21 @@ export default function AdminUsuarioForm() {
           {/* Contraseña */}
           <Col md={6}>
             <Form.Group controlId="passwordUsuario">
-              <Form.Label>Contraseña</Form.Label>
+              <Form.Label>
+                Contraseña {esEdicion && <small className="text-muted">(vacío = conservar la actual)</small>}
+              </Form.Label>
               <Form.Control
                 type="text"
                 maxLength={10}
                 value={password}
+                placeholder={esEdicion ? 'Dejar vacío para no cambiarla' : ''}
                 onChange={(e) => setPassword(e.target.value)}
                 onBlur={() => setTocado((prev) => ({ ...prev, password: true }))}
                 isValid={tocado.password && passwordValido}
                 isInvalid={tocado.password && !passwordValido}
               />
               <Form.Control.Feedback type="invalid">
-                Entre 4 y 10 caracteres.
+                Entre 4 y 10 caracteres (obligatoria al crear un usuario).
               </Form.Control.Feedback>
             </Form.Group>
           </Col>

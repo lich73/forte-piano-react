@@ -1,8 +1,15 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { FORTEPIANO_KEYS } from '../storage/claves'
-import { Sesion, Usuario } from '../types'
-import { inicializarDatos } from '../data/seed'
-import { limpiarRun } from '../utils/validaciones'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import {
+  authApi,
+  eliminarSesion,
+  eliminarTokenJwt,
+  guardarSesion,
+  guardarTokenJwt,
+  mensajeDeError,
+  obtenerSesionGuardada,
+  obtenerTokenJwt
+} from '../services/api'
+import type { RegistroRequest, Sesion } from '../types'
 
 interface LoginResultado {
   exito: boolean
@@ -21,109 +28,106 @@ export interface DatosActualizacionPerfil {
 
 interface AuthContextValue {
   sesion: Sesion | null
-  login: (correo: string, password: string) => LoginResultado
+  cargando: boolean
+  login: (correo: string, password: string) => Promise<LoginResultado>
+  registro: (datos: RegistroRequest) => Promise<LoginResultado>
   logout: () => void
-  actualizarPerfil: (datos: DatosActualizacionPerfil) => boolean
+  actualizarPerfil: (datos: DatosActualizacionPerfil) => Promise<boolean>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [sesion, setSesion] = useState<Sesion | null>(() => {
-    try {
-      const sesionGuardada = localStorage.getItem(FORTEPIANO_KEYS.sesion)
-      return sesionGuardada ? (JSON.parse(sesionGuardada) as Sesion) : null
-    } catch {
-      return null
-    }
-  })
+  // Una sesión guardada sin JWT es residue de la versión anterior (localStorage-only).
+  // No debe dar acceso a la app: se descarta antes del primer render.
+  const [sesion, setSesion] = useState<Sesion | null>(() =>
+    obtenerTokenJwt() ? obtenerSesionGuardada() : null
+  )
+  const [cargando, setCargando] = useState(() => Boolean(obtenerTokenJwt()))
 
-  useEffect(() => {
-    inicializarDatos()
-  }, [])
-
-  const login = (correo: string, password: string): LoginResultado => {
-    const rawUsuarios = localStorage.getItem(FORTEPIANO_KEYS.usuarios)
-    const usuarios: Usuario[] = rawUsuarios ? JSON.parse(rawUsuarios) : []
-
-    const correoNormalizado = correo.toLowerCase().trim()
-    const usuario = usuarios.find(
-      (u) => u.correo.toLowerCase().trim() === correoNormalizado && u.password === password
-    )
-
-    if (!usuario) {
-      return {
-        exito: false,
-        mensaje: 'El correo o la contrasena no coinciden.'
-      }
-    }
-
-    if (usuario.estado === 'Inactivo') {
-      return {
-        exito: false,
-        mensaje: 'Tu cuenta se encuentra deshabilitada. Contacta a un administrador.'
-      }
-    }
-
-    const nuevaSesion: Sesion = {
-      run: usuario.run,
-      nombre: usuario.nombre,
-      apellidos: usuario.apellidos,
-      correo: usuario.correo,
-      rolId: usuario.rolId
-    }
-
-    localStorage.setItem(FORTEPIANO_KEYS.sesion, JSON.stringify(nuevaSesion))
+  const aplicarSesion = (nuevaSesion: Sesion) => {
+    guardarSesion(nuevaSesion)
     setSesion(nuevaSesion)
-
-    return {
-      exito: true,
-      sesion: nuevaSesion
-    }
   }
 
-  const logout = () => {
-    localStorage.removeItem(FORTEPIANO_KEYS.sesion)
+  const cerrarSesion = () => {
+    eliminarTokenJwt()
+    eliminarSesion()
     setSesion(null)
   }
 
-  const actualizarPerfil = (datos: DatosActualizacionPerfil): boolean => {
-    if (!sesion) return false
-    try {
-      const rawUsuarios = localStorage.getItem(FORTEPIANO_KEYS.usuarios)
-      const usuarios: Usuario[] = rawUsuarios ? JSON.parse(rawUsuarios) : []
-      const runObjetivo = limpiarRun(sesion.run)
+  // Al recargar (F5) se valida el JWT contra /auth/me en lugar de confiar en localStorage.
+  useEffect(() => {
+    const alExpirar = () => cerrarSesion()
+    window.addEventListener('fortepiano_sesion_expirada', alExpirar)
 
-      const actualizados = usuarios.map((u) => {
-        if (limpiarRun(u.run) === runObjetivo) {
-          return {
-            ...u,
-            nombre: datos.nombre.trim(),
-            apellidos: datos.apellidos.trim(),
-            correo: datos.correo.trim(),
-            regionId: Number(datos.regionId),
-            comunaId: Number(datos.comunaId),
-            direccion: datos.direccion.trim()
-          }
-        }
-        return u
+    if (!obtenerTokenJwt()) {
+      // Limpia la sesión huérfana para que no aparezca como "logueado" en la UI.
+      cerrarSesion()
+      setCargando(false)
+      return () => window.removeEventListener('fortepiano_sesion_expirada', alExpirar)
+    }
+
+    let activo = true
+    authApi
+      .me()
+      .then((datos) => {
+        if (activo) aplicarSesion(datos)
+      })
+      .catch(() => {
+        if (activo) cerrarSesion()
+      })
+      .finally(() => {
+        if (activo) setCargando(false)
       })
 
-      localStorage.setItem(FORTEPIANO_KEYS.usuarios, JSON.stringify(actualizados))
-      window.dispatchEvent(
-        new CustomEvent('fortepiano_storage_change', {
-          detail: { clave: FORTEPIANO_KEYS.usuarios }
-        })
-      )
+    return () => {
+      activo = false
+      window.removeEventListener('fortepiano_sesion_expirada', alExpirar)
+    }
+  }, [])
 
-      const nuevaSesion: Sesion = {
-        ...sesion,
-        nombre: datos.nombre.trim(),
-        apellidos: datos.apellidos.trim(),
-        correo: datos.correo.trim()
+  const login = async (correo: string, password: string): Promise<LoginResultado> => {
+    try {
+      const respuesta = await authApi.login(correo, password)
+      if (!respuesta.exito || !respuesta.token || !respuesta.sesion) {
+        return { exito: false, mensaje: respuesta.mensaje || 'No fue posible iniciar sesión.' }
       }
-      localStorage.setItem(FORTEPIANO_KEYS.sesion, JSON.stringify(nuevaSesion))
-      setSesion(nuevaSesion)
+      guardarTokenJwt(respuesta.token)
+      aplicarSesion(respuesta.sesion)
+      return { exito: true, sesion: respuesta.sesion }
+    } catch (e) {
+      const mensaje = mensajeDeError(e)
+      if (mensaje.toLowerCase().includes('inactiva') || mensaje.toLowerCase().includes('deshabilitada')) {
+        return { exito: false, mensaje: 'Tu cuenta se encuentra deshabilitada. Contacta a un administrador.' }
+      }
+      return { exito: false, mensaje }
+    }
+  }
+
+  const registro = async (datos: RegistroRequest): Promise<LoginResultado> => {
+    try {
+      const respuesta = await authApi.registro(datos)
+      if (respuesta.token && respuesta.sesion) {
+        guardarTokenJwt(respuesta.token)
+        aplicarSesion(respuesta.sesion)
+      }
+      return {
+        exito: true,
+        sesion: respuesta.sesion,
+        mensaje: respuesta.mensaje || 'Usuario registrado correctamente.'
+      }
+    } catch (e) {
+      return { exito: false, mensaje: mensajeDeError(e) }
+    }
+  }
+
+  const logout = () => cerrarSesion()
+
+  const actualizarPerfil = async (datos: DatosActualizacionPerfil): Promise<boolean> => {
+    try {
+      const actualizada = await authApi.actualizarPerfil(datos)
+      aplicarSesion(actualizada)
       return true
     } catch {
       return false
@@ -131,7 +135,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ sesion, login, logout, actualizarPerfil }}>
+    <AuthContext.Provider
+      value={{ sesion, cargando, login, registro, logout, actualizarPerfil }}
+    >
       {children}
     </AuthContext.Provider>
   )

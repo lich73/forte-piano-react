@@ -1,27 +1,26 @@
 import { useCallback } from 'react'
-import { FORTEPIANO_KEYS } from '../storage/claves'
-import { useColeccion } from '../storage/useColeccion'
-import { Producto } from '../types'
+import { productosApi } from '../services/api'
+import type { Producto } from '../types'
+import { useApiLista } from './useApiLista'
 import { useTablasMaestras } from './useTablasMaestras'
 
 /**
- * Hook para gestionar los productos, filtros de catálogo y destacados.
+ * Hook para gestionar los productos del catálogo.
+ * Los datos se obtienen desde GET /api/v1/productos (MySQL), nunca desde localStorage.
  */
 export function useProductos() {
-  const { datos: productos, guardar, recargar } = useColeccion<Producto>(FORTEPIANO_KEYS.productos)
+  const { datos: productos, cargando, error, recargar, setDatos } = useApiLista<Producto>(
+    () => productosApi.listar()
+  )
   const { obtenerNombreCategoria } = useTablasMaestras()
 
   const obtenerProducto = useCallback(
-    (codigo: string): Producto | undefined => {
-      return productos.find((p) => p.codigo === codigo)
-    },
+    (codigo: string): Producto | undefined => productos.find((p) => p.codigo === codigo),
     [productos]
   )
 
   const destacados = useCallback(
-    (cantidad = 5): Producto[] => {
-      return productos.filter((p) => p.estado === 'Activo').slice(0, cantidad)
-    },
+    (cantidad = 5): Producto[] => productos.filter((p) => p.estado === 'Activo').slice(0, cantidad),
     [productos]
   )
 
@@ -45,29 +44,47 @@ export function useProductos() {
   )
 
   const guardarProducto = useCallback(
-    (producto: Producto) => {
-      guardar((prev) => {
-        const index = prev.findIndex((p) => p.codigo === producto.codigo)
-        if (index >= 0) {
-          const actualizados = [...prev]
-          actualizados[index] = producto
-          return actualizados
-        }
-        return [...prev, producto]
-      })
+    async (producto: Producto): Promise<Producto | null> => {
+      try {
+        const existe = productos.some((p) => p.codigo === producto.codigo)
+        const guardado = existe
+          ? await productosApi.actualizar(producto.codigo, producto)
+          : await productosApi.crear(producto)
+
+        setDatos((prev) => {
+          const index = prev.findIndex((p) => p.codigo === guardado.codigo)
+          if (index >= 0) {
+            const actualizados = [...prev]
+            actualizados[index] = guardado
+            return actualizados
+          }
+          return [guardado, ...prev]
+        })
+        return guardado
+      } catch {
+        return null
+      }
     },
-    [guardar]
+    [productos, setDatos]
   )
 
   const eliminarProducto = useCallback(
-    (codigo: string) => {
-      guardar((prev) => prev.filter((p) => p.codigo !== codigo))
+    async (codigo: string): Promise<boolean> => {
+      try {
+        await productosApi.eliminar(codigo)
+        setDatos((prev) => prev.filter((p) => p.codigo !== codigo))
+        return true
+      } catch {
+        return false
+      }
     },
-    [guardar]
+    [setDatos]
   )
 
   return {
     productos,
+    cargando,
+    error,
     destacados,
     obtenerProducto,
     filtrarProductos,

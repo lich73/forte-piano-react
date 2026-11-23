@@ -18,7 +18,7 @@ export interface Usuario {
   nombre: string
   apellidos: string
   correo: string
-  password: string
+  password?: string
   fechaNacimiento: string
   rolId: number
   regionId: number
@@ -33,6 +33,7 @@ export interface Sesion {
   apellidos: string
   correo: string
   rolId: number
+  rolNombre?: string
 }
 
 export interface ItemCarrito {
@@ -130,4 +131,95 @@ export interface Boleta {
   estado: EstadoPedido
   datosEnvio?: DatosEnvio
   mensajeTransaccion?: string
+}
+
+/* ---------- Contratos del backend Spring Boot (/api/v1) ---------- */
+
+export interface ApiErrorDto {
+  timestamp?: string
+  status?: number
+  error?: string
+  message?: string
+  path?: string
+  detalles?: string[]
+}
+
+export interface AuthResponse {
+  exito: boolean
+  token: string
+  mensaje?: string
+  sesion: Sesion
+}
+
+export interface RegistroRequest {
+  run: string
+  nombre: string
+  apellidos: string
+  correo: string
+  password: string
+  fechaNacimiento?: string
+  regionId: number
+  comunaId: number
+  direccion: string
+}
+
+export interface CheckoutRequest {
+  clienteRun?: string
+  clienteNombre: string
+  clienteApellidos?: string
+  clienteCorreo: string
+  metodoPago?: string
+  datosEnvio: DatosEnvio
+  items: ItemCarrito[]
+  resultadoTransaccion?: ResultadoPasarela
+  boletaExistenteId?: string
+}
+
+export interface ReintentoPagoRequest {
+  resultadoTransaccion: ResultadoPasarela
+  metodoPago?: string
+}
+
+export interface EstadoPedidoResumen {
+  estado: string
+  cantidad: number
+  porcentaje: number
+}
+
+export interface ProductoVendidoResumen {
+  codigo: string
+  nombre: string
+  unidadesVendidas: number
+  ingresosGenerados: number
+}
+
+export interface ProductoStockResumen {
+  codigo: string
+  nombre: string
+  stock: number
+  stockCritico: number
+  categoriaId?: number
+  estado?: string
+}
+
+export interface AlertaStockResumen {
+  codigo: string
+  nombre: string
+  stock: number
+  stockCritico: number
+  nivelAlerta: string
+}
+
+export interface DashboardResumenDto {
+  ventasTotales: number
+  cantidadPedidos: number
+  unidadesVendidas: number
+  totalProductos: number
+  productosEnOferta: number
+  productosStockCritico: number
+  distribucionEstados: EstadoPedidoResumen[]
+  conteoPorEstado: Record<string, number>
+  productosMasVendidos: ProductoVendidoResumen[]
+  productosMayorStock: ProductoStockResumen[]
+  alertasStockCritico: AlertaStockResumen[]
 }

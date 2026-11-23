@@ -64,8 +64,10 @@ export default function AdminProductos() {
     )
 
     if (confirmacion.isConfirmed) {
-      eliminarProducto(codigo)
-      alertaExito('Eliminado', 'El producto fue eliminado correctamente.')
+      const ok = await eliminarProducto(codigo)
+      if (ok) {
+        alertaExito('Eliminado', 'El producto fue eliminado correctamente.')
+      }
     }
   }
 

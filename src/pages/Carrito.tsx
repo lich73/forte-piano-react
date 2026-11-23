@@ -32,7 +32,9 @@ export default function Carrito() {
     procesarPagoPasarela
   } = useCart()
   const { sesion, actualizarPerfil } = useAuth()
-  const { obtenerUsuarioPorRun } = useUsuarios()
+  // /usuarios es exclusivo de ADMIN. Los clientes no deben disparar ese GET:
+  // sus datos vienen de /auth/me y se completan con el formulario de perfil.
+  const { obtenerUsuarioPorRun } = useUsuarios({ activo: sesion?.rolId === 1 })
   const {
     regiones,
     obtenerComunasPorRegion,
@@ -108,7 +110,7 @@ export default function Carrito() {
   const envioDireccionValida =
     modalidadEntrega === 'otra_direccion' ? textoRequerido(envioDireccion, 300) : true
 
-  const handleGuardarCambiosPerfil = () => {
+  const handleGuardarCambiosPerfil = async () => {
     setTocado((prev) => ({
       ...prev,
       clienteNombre: true,
@@ -135,7 +137,7 @@ export default function Carrito() {
       return
     }
 
-    const ok = actualizarPerfil({
+    const ok = await actualizarPerfil({
       nombre: clienteNombre,
       apellidos: clienteApellidos,
       correo: clienteCorreo,
@@ -153,10 +155,12 @@ export default function Carrito() {
         timer: 1800,
         showConfirmButton: false
       })
+    } else {
+      Swal.fire('Error', 'No se pudo actualizar tu perfil en el servidor.', 'error')
     }
   }
 
-  const handleAbrirPasarelaPago = () => {
+  const handleAbrirPasarelaPago = async () => {
     setTocado({
       clienteRun: true,
       clienteNombre: true,
@@ -240,7 +244,7 @@ export default function Carrito() {
     }
 
     if (sesion && editandoPerfil) {
-      actualizarPerfil({
+      await actualizarPerfil({
         nombre: clienteNombre,
         apellidos: clienteApellidos,
         correo: clienteCorreo,
@@ -264,7 +268,7 @@ export default function Carrito() {
     setMostrarPasarela(true)
   }
 
-  const handleResultadoPasarela = (
+  const handleResultadoPasarela = async (
     resultado: ResultadoPasarela,
     pedidoActualId?: string
   ) => {
@@ -272,7 +276,7 @@ export default function Carrito() {
       return { exito: false, mensaje: 'No hay datos de checkout preparados.' }
     }
 
-    const respuesta = procesarPagoPasarela(
+    const respuesta = await procesarPagoPasarela(
       datosCheckoutPreparados,
       resultado,
       pedidoActualId

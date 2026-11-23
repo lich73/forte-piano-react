@@ -2,15 +2,15 @@ import { useMemo } from 'react'
 import { Card, Row, Col, Table, Badge, ProgressBar } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { useBoletas } from '../../hooks/useBoletas'
-import { useColeccion } from '../../storage/useColeccion'
-import { FORTEPIANO_KEYS } from '../../storage/claves'
-import { Producto, Categoria, EstadoPedido } from '../../types'
+import { useProductos } from '../../hooks/useProductos'
+import { useTablasMaestras } from '../../hooks/useTablasMaestras'
+import { EstadoPedido } from '../../types'
 import { formatearPrecio, tieneOfertaActiva } from '../../utils/formato'
 
 export default function AdminReportes() {
   const { boletas } = useBoletas()
-  const { datos: productos } = useColeccion<Producto>(FORTEPIANO_KEYS.productos)
-  const { datos: categorias } = useColeccion<Categoria>(FORTEPIANO_KEYS.categorias)
+  const { productos } = useProductos()
+  const { categorias } = useTablasMaestras()
 
   // 1. Métricas generales
   const boletasValidas = useMemo(

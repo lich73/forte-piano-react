@@ -10,8 +10,10 @@ interface PasarelaPagoModalProps {
   datosCheckout: DatosCheckout | null
   onProcesarResultado: (
     resultado: ResultadoPasarela,
-     pedidoActualId?: string
-  ) => { exito: boolean; boleta?: Boleta; mensaje: string }
+    pedidoActualId?: string
+  ) =>
+    | { exito: boolean; boleta?: Boleta; mensaje: string }
+    | Promise<{ exito: boolean; boleta?: Boleta; mensaje: string }>
 }
 
 export function PasarelaPagoModal({
@@ -49,17 +51,26 @@ export function PasarelaPagoModal({
     setProcesando(true)
     setResultadoActual(null)
 
-    setTimeout(() => {
-      const respuesta = onProcesarResultado(escenario, pedidoTemporalId)
-      if (respuesta.boleta) {
-        setPedidoTemporalId(respuesta.boleta.id)
+    setTimeout(async () => {
+      try {
+        const respuesta = await onProcesarResultado(escenario, pedidoTemporalId)
+        if (respuesta.boleta) {
+          setPedidoTemporalId(respuesta.boleta.id)
+        }
+        setProcesando(false)
+        setResultadoActual({
+          tipo: escenario,
+          mensaje: respuesta.mensaje,
+          boleta: respuesta.boleta
+        })
+      } catch {
+        setProcesando(false)
+        setResultadoActual({
+          tipo: escenario,
+          mensaje: 'No fue posible procesar el pago. Inténtalo nuevamente.',
+          boleta: undefined
+        })
       }
-      setProcesando(false)
-      setResultadoActual({
-        tipo: escenario,
-        mensaje: respuesta.mensaje,
-        boleta: respuesta.boleta
-      })
     }, 550)
   }
 
