@@ -23,7 +23,7 @@ function DesgloseReporter() {
   this.onRunStart = () => {
     contador = 0
     console.log('\n==========================================================================')
-    console.log('  DESGLOSE DE TESTS UNITARIOS - FORTE & PIANO (Carpeta: tests_varios)')
+    console.log('  DESGLOSE DE TESTS UNITARIOS - FORTE & PIANO (Carpeta: __tests__)')
     console.log('==========================================================================\n')
   }
 
@@ -66,10 +66,16 @@ module.exports = (config) => {
       'karma-vite',
       'karma-jasmine',
       'karma-chrome-launcher',
+      'karma-coverage',
       { 'reporter:desglose': ['type', DesgloseReporter] }
     ],
     frameworks: ['vite', 'jasmine'],
     vite: {
+      coverage: {
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: ['src/__tests__/**', 'node_modules/**'],
+        extension: ['.ts', '.tsx']
+      },
       config: {
         server: {
           preTransformRequests: false
@@ -82,19 +88,15 @@ module.exports = (config) => {
       }
     },
     files: [
-      // Tests antiguos (integrante1, integrante2, integrante3) desactivados temporalmente:
-      // { pattern: 'src/__tests__/integrante*/**/*.spec.ts', type: 'module', watched: false, served: false },
-      // { pattern: 'src/__tests__/integrante*/**/*.spec.tsx', type: 'module', watched: false, served: false },
-
-      // Solo ejecutar los 5 nuevos tests de la carpeta tests_varios (en orden 1 al 5):
+      // Unicos tests del proyecto: 5 pruebas unitarias en src/__tests__ (orden 1 al 5)
       {
-        pattern: 'src/__tests__/tests_varios/**/*.spec.tsx',
+        pattern: 'src/__tests__/*.spec.tsx',
         type: 'module',
         watched: false,
         served: false
       },
       {
-        pattern: 'src/__tests__/tests_varios/**/*.spec.ts',
+        pattern: 'src/__tests__/*.spec.ts',
         type: 'module',
         watched: false,
         served: false
@@ -108,7 +110,18 @@ module.exports = (config) => {
       }
     },
     singleRun: true,
-    reporters: ['desglose'],
+    reporters: ['desglose', 'coverage'],
+    coverageReporter: {
+      dir: 'coverage/',
+      reporters: [
+        { type: 'text' },
+        { type: 'text-summary' },
+        { type: 'html' },
+        { type: 'lcovonly' },
+        { type: 'json' },
+        { type: 'json-summary' }
+      ]
+    },
     port: 9876,
     colors: true,
     logLevel: config.LOG_ERROR

@@ -1,8 +1,8 @@
 import { act } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
-import { NewsCard } from '../../components/common/NewsCard'
-import { Noticia } from '../../types'
+import { NewsCard } from '../components/common/NewsCard'
+import { Noticia } from '../types'
 
 ;(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 

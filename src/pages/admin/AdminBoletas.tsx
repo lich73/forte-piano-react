@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Card, Row, Col, Badge, Button } from 'react-bootstrap'
 import Swal from 'sweetalert2'
 import { useBoletas } from '../../hooks/useBoletas'
+import { useAuth } from '../../context/AuthContext'
 import { generarHtmlBoleta } from '../../context/CartContext'
 import { DataTable, Columna } from '../../components/common/DataTable'
 import { formatearPrecio } from '../../utils/formato'
@@ -10,6 +11,8 @@ import { imprimirBoletaHtml } from '../../utils/impresion'
 
 export default function AdminBoletas() {
   const { boletas, anularBoleta } = useBoletas()
+  const { sesion } = useAuth()
+  const soloLectura = sesion?.rolId === 2
 
   // Estadísticas generales
   const stats = useMemo(() => {
@@ -156,7 +159,7 @@ export default function AdminBoletas() {
             >
               <i className="bi bi-eye" />
             </Button>
-            {b.estado === 'Emitida' && (
+            {!soloLectura && b.estado === 'Emitida' && (
               <Button
                 size="sm"
                 variant="outline-danger"
@@ -170,7 +173,7 @@ export default function AdminBoletas() {
         )
       }
     ],
-    []
+    [soloLectura]
   )
 
   return (

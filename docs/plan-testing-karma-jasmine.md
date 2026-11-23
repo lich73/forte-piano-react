@@ -25,23 +25,42 @@ npm install -D karma jasmine-core karma-jasmine karma-chrome-launcher karma-vite
 ```
 
 ### Archivo de configuración: `karma.conf.cjs`
-Karma se configura en la raíz del proyecto para reconocer TypeScript, JSX y módulos ES a través de Vite:
+Karma se configura en la raíz del proyecto para reconocer TypeScript, JSX y módulos ES a través de Vite, e incluye medición de cobertura con `karma-coverage`:
 ```javascript
 module.exports = function (config) {
   config.set({
     frameworks: ['jasmine', 'vite'],
     files: [
-      { pattern: 'src/**/*.spec.ts', type: 'module' },
-      { pattern: 'src/**/*.spec.tsx', type: 'module' }
+      { pattern: 'src/__tests__/*.spec.tsx', type: 'module', watched: false, served: false },
+      { pattern: 'src/__tests__/*.spec.ts', type: 'module', watched: false, served: false }
     ],
     plugins: [
       'karma-jasmine',
       'karma-chrome-launcher',
-      'karma-vite'
+      'karma-vite',
+      'karma-coverage'
     ],
-    browsers: ['ChromeHeadless'], // Ideal para terminal sin abrir ventana
+    vite: {
+      coverage: {
+        include: ['src/**/*.{ts,tsx}'],
+        exclude: ['src/__tests__/**', 'node_modules/**'],
+        extension: ['.ts', '.tsx']
+      }
+    },
+    browsers: ['ChromeHeadless'],
     singleRun: true,
-    reporters: ['progress']
+    reporters: ['coverage'],
+    coverageReporter: {
+      dir: 'coverage/',
+      reporters: [
+        { type: 'text' },
+        { type: 'text-summary' },
+        { type: 'html' },
+        { type: 'lcovonly' },
+        { type: 'json' },
+        { type: 'json-summary' }
+      ]
+    }
   })
 }
 ```
@@ -55,95 +74,70 @@ module.exports = function (config) {
 
 ---
 
-## 3. Distribución del Plan: 2 Tests por Integrante
+## 3. Suite Vigente: 5 Tests Unitarios en `src/__tests__/`
 
-Cada integrante desarrollará **2 suites de prueba unitarias** asociadas a sus componentes y módulos correspondientes:
+La carpeta `src/__tests__/` es la **única ubicación de tests** del proyecto. Las antiguas suites `integrante1`, `integrante2` e `integrante3` fueron eliminadas para evitar duplicidad y mantener una sola fuente de verdad.
 
 ```
 src/
 ├── __tests__/
-│   ├── integrante1/
-│   │   ├── validaciones.spec.ts        # Test 1 (Validaciones de negocio)
-│   │   └── auth-context.spec.ts        # Test 2 (Autenticación y Sesión)
-│   ├── integrante2/
-│   │   ├── formato-precio.spec.ts      # Test 3 (Formato de moneda chilena)
-│   │   └── cart-context.spec.ts        # Test 4 (Lógica de Carrito y Stock)
-│   └── integrante3/
-│       ├── datatable.spec.ts           # Test 5 (Filtro y ordenación DataTable)
-│       └── contacto-val.spec.ts        # Test 6 (Validación formulario Contacto)
+│   ├── 1-render.spec.tsx     # Render  → Footer
+│   ├── 2-props.spec.tsx      # Props   → NewsCard
+│   ├── 3-state.spec.tsx      # State   → Productos (soloOfertas)
+│   ├── 4-event.spec.tsx      # Event   → ProductCard + CartContext
+│   └── 5-entorno.spec.ts     # Entorno → seed.ts + claves.ts
 ```
 
 ---
 
-### Detalle de Tests por Integrante
+### Detalle de los 5 Tests
 
-###  Integrante 1 (Arquitectura & Seguridad)
-*Ya puede empezar inmediatamente.*
+#### Test 1: Render de un componente de layout
+* **Archivo:** `src/__tests__/1-render.spec.tsx`
+* **Módulo evaluado:** `src/components/layout/Footer.tsx`
+* **Caso de prueba:**
+  1. Renderiza `<Footer>` dentro de `<MemoryRouter>` usando `createRoot` y `act`.
+  2. Comprueba que existe el elemento `<footer>` y que el texto contiene el nombre de la tienda y sus enlaces.
 
-#### Test 1: Algoritmo de Validación de RUN y Reglas de Correo
-* **Archivo:** `src/__tests__/integrante1/validaciones.spec.ts`
-* **Módulo evaluado:** `src/utils/validaciones.ts` (`validarRun`, `validarCorreo`, `validarPassword`)
-* **Casos de prueba a verificar:**
-  1. `validarRun()` debe retornar `true` para un RUN chileno válido con dígito verificador correcto (ej. `123456785` o `112223339`), y `false` para RUNs con dígito incorrecto o longitud inválida.
-  2. `validarCorreo()` debe aceptar únicamente dominios permitidos (`@duoc.cl`, `@profesor.duoc.cl`, `@gmail.com`) y rechazar dominios no autorizados (ej. `@hotmail.com` o texto vacío).
+#### Test 2: Recepción de props en un componente de contenido
+* **Archivo:** `src/__tests__/2-props.spec.tsx`
+* **Módulo evaluado:** `src/components/common/NewsCard.tsx`
+* **Caso de prueba:**
+  1. Construye un objeto `Noticia` de prueba y lo pasa como prop `noticia`.
+  2. Verifica que el DOM muestra el título, la fecha y el resumen recibidos.
 
-#### Test 2: Proveedor de Autenticación (`AuthContext` y Sesión)
-* **Archivo:** `src/__tests__/integrante1/auth-context.spec.ts`
-* **Módulo evaluado:** `src/context/AuthContext.tsx`
-* **Casos de prueba a verificar:**
-  1. Credenciales válidas de usuario activo deben crear la sesión en `localStorage` con su `rolId` y nombre correcto.
-  2. Credenciales inválidas o cuenta marcada como `'Inactivo'` deben rechazar el login con `exito: false` y mantener la sesión en `null`.
+#### Test 3: Actualización de estado local
+* **Archivo:** `src/__tests__/3-state.spec.tsx`
+* **Módulo evaluado:** `src/pages/Productos.tsx`
+* **Caso de prueba:**
+  1. Renderiza `<Productos>` dentro de `<CartProvider>` y `<MemoryRouter>`.
+  2. Verifica el texto inicial del botón `#btnFiltroOfertas` ("Ver productos en oferta").
+  3. Hace clic y comprueba que el estado `soloOfertas` cambia a `true` reflejándose en "Viendo solo ofertas".
 
----
+#### Test 4: Ejecución de eventos y persistencia
+* **Archivo:** `src/__tests__/4-event.spec.tsx`
+* **Módulos evaluados:** `src/components/common/ProductCard.tsx`, `src/context/CartContext.tsx`
+* **Caso de prueba:**
+  1. Inicializa la semilla con `inicializarDatos()` y toma el producto `PD-001`.
+  2. Renderiza `<ProductCard>` dentro de `<CartProvider>`.
+  3. Dispara el `click` del botón `button[title="Añadir al carrito"]`.
+  4. Comprueba que `localStorage['fortepiano_carrito']` contiene el producto con cantidad `1`.
 
-###  Integrante 2 (E-Commerce & Estado Global)
-*Ya puede empezar inmediatamente.*
-
-#### Test 3: Formateo de Precios y Manejo de Moneda Local
-* **Archivo:** `src/__tests__/integrante2/formato-precio.spec.ts`
-* **Módulo evaluado:** `src/utils/formato.ts` (`formatearPrecio`)
-* **Casos de prueba a verificar:**
-  1. `formatearPrecio(699990)` debe retornar el formato con separador de miles chileno `"$699.990"`.
-  2. Debe manejar correctamente valores en `0` (`"$0"`) y números decimales redondeados.
-
-#### Test 4: Lógica de Carrito y Límite de Stock Disponible
-* **Archivo:** `src/__tests__/integrante2/cart-context.spec.ts`
-* **Módulo evaluado:** `src/context/CartContext.tsx`
-* **Casos de prueba a verificar:**
-  1. Agregar un producto dentro del stock debe incrementar `totalItems` y calcular el subtotal correctamente.
-  2. Intentar agregar una cantidad superior al `producto.stock` o agregar un producto agotado (`stock: 0`) debe ser bloqueado y no modificar el carrito.
-
----
-
-###  Integrante 3 (Contenidos & Panel Administrativo)
-*Puede iniciar en cuanto complete o maquete sus componentes.*
-
-#### Test 5: Componente de Búsqueda y Orden en `<DataTable>`
-* **Archivo:** `src/__tests__/integrante3/datatable.spec.ts`
-* **Módulo evaluado:** `src/components/common/DataTable.tsx`
-* **Casos de prueba a verificar:**
-  1. El filtro de búsqueda por texto debe reducir la lista de registros a solo aquellos que coincidan con el término ingresado.
-  2. El ordenamiento por columna debe alternar ascendentemente y descendentemente según la columna seleccionada.
-
-#### Test 6: Validación de Formulario de Contacto
-* **Archivo:** `src/__tests__/integrante3/contacto-val.spec.ts`
-* **Módulo evaluado:** `src/pages/Contacto.tsx`
-* **Casos de prueba a verificar:**
-  1. El formulario debe rechazar el envío si el comentario está vacío o supera los 500 caracteres permitidos.
-  2. Un envío válido debe registrar el mensaje en la colección `fortepiano_contactos` de `localStorage` con la fecha actual.
+#### Test 5: Verificación del entorno y semillas
+* **Archivo:** `src/__tests__/5-entorno.spec.ts`
+* **Módulos evaluados:** `src/data/seed.ts`, `src/storage/claves.ts`
+* **Caso de prueba:**
+  1. Verifica la disponibilidad de `window`, `document` y `localStorage`.
+  2. Ejecuta `inicializarDatos()`.
+  3. Comprueba que las colecciones de roles, productos y usuarios quedan cargadas en `localStorage` usando `FORTEPIANO_KEYS`.
 
 ---
 
 ## 4. Convención de Ramas y Commits para Tests
 
-Cada integrante creará su rama para testing desde `migracion-react`:
+La suite se mantiene en una sola rama de testing desde `main`:
 
-1. **Integrante 1:**
-   * Rama: `test-integrante-1-auth-validaciones`
-   * Commit: `test(auth): agregar pruebas unitarias para validaciones y auth context con karma/jasmine`
-2. **Integrante 2:**
-   * Rama: `test-integrante-2-formato-carrito`
-   * Commit: `test(cart): agregar pruebas unitarias para formateo y logica de carrito con karma/jasmine`
-3. **Integrante 3:**
-   * Rama: `test-integrante-3-datatable-contacto`
-   * Commit: `test(admin): agregar pruebas unitarias para datatable y contacto con karma/jasmine`
+* **Rama:** `test/suite-unitaria-react`
+* **Commit:** `test(frontend): consolidar los 5 tests unitarios en src/__tests__ con cobertura karma`
+
+> Los archivos de las suites antiguas se conservan únicamente en el historial de Git y pueden recuperarse con `git log -- src/__tests__/integrante*` si se necesitan como referencia.

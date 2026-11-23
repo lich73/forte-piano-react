@@ -9,5 +9,6 @@ export const FORTEPIANO_KEYS = {
   contactos: 'fortepiano_contactos',
   blog: 'fortepiano_blog',
   sesion: 'fortepiano_sesion',
-  boletas: 'fortepiano_boletas'
+  boletas: 'fortepiano_boletas',
+  jwtToken: 'fortepiano_jwt_token'
 } as const

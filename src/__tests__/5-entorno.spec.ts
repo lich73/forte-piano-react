@@ -1,5 +1,5 @@
-import { inicializarDatos } from '../../data/seed'
-import { FORTEPIANO_KEYS } from '../../storage/claves'
+import { inicializarDatos } from '../data/seed'
+import { FORTEPIANO_KEYS } from '../storage/claves'
 
 describe('Tests Varios - 5. Categoría: TEST ENTORNO', () => {
   beforeEach(() => {
