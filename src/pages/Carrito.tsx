@@ -68,14 +68,17 @@ export default function Carrito() {
   const [tocado, setTocado] = useState<Record<string, boolean>>({})
 
   // Cargar datos del perfil del usuario autenticado.
-  // /auth/me no devuelve región, comuna ni dirección: esos datos se completan
-  // en el formulario de perfil y nunca se rellenan con IDs por defecto.
+  // /auth/me devuelve región, comuna y dirección desde SesionDto; si el usuario
+  // aún no las registró, los campos quedan vacíos y se validan en el formulario.
   useEffect(() => {
     if (sesion) {
       setClienteRun(sesion.run)
       setClienteNombre(sesion.nombre)
       setClienteApellidos(sesion.apellidos)
       setClienteCorreo(sesion.correo)
+      setPerfilRegionId(sesion.regionId ? String(sesion.regionId) : '')
+      setPerfilComunaId(sesion.comunaId ? String(sesion.comunaId) : '')
+      setPerfilDireccion(sesion.direccion ?? '')
       setEnvioDestinatario(`${sesion.nombre} ${sesion.apellidos}`.trim())
       setModalidadEntrega('perfil')
     } else {
