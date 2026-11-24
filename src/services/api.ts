@@ -108,7 +108,7 @@ export async function apiFetch<T>(
   } catch {
     throw new ApiError(
       'No se pudo conectar con el backend. Revisa que esté ejecutándose en ' +
-        API_BASE_URL,
+      API_BASE_URL,
       0
     )
   }
