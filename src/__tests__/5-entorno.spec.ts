@@ -1,4 +1,3 @@
-import { inicializarDatos } from '../data/seed'
 import { FORTEPIANO_KEYS } from '../storage/claves'
 
 describe('Tests Varios - 5. Categoría: TEST ENTORNO', () => {
@@ -10,23 +9,40 @@ describe('Tests Varios - 5. Categoría: TEST ENTORNO', () => {
     localStorage.clear()
   })
 
-  it('Debe verificar que el entorno del navegador (window, document, localStorage) y la semilla inicial funcionan correctamente', () => {
-    // 1. Verificar que los objetos globales del entorno DOM están disponibles
+  it('Debe verificar que el entorno del navegador (window, document, localStorage) está disponible', () => {
     expect(typeof window).toBe('object')
     expect(typeof document).toBe('object')
     expect(typeof localStorage).toBe('object')
+  })
 
-    // 2. Ejecutar la inicialización de datos del entorno de Forte & Piano
-    inicializarDatos()
+  it('Debe permitir en localStorage solo las claves de carrito, sesión y JWT', () => {
+    const clavesPermitidas: string[] = [
+      'fortepiano_carrito',
+      'fortepiano_sesion',
+      'fortepiano_jwt_token'
+    ]
 
-    // 3. Comprobar que las colecciones base se cargaron en localStorage
-    const roles = JSON.parse(localStorage.getItem(FORTEPIANO_KEYS.roles) || '[]')
-    const productos = JSON.parse(localStorage.getItem(FORTEPIANO_KEYS.productos) || '[]')
-    const usuarios = JSON.parse(localStorage.getItem(FORTEPIANO_KEYS.usuarios) || '[]')
+    const clavesActuales: string[] = [...Object.values(FORTEPIANO_KEYS)]
 
-    expect(roles.length).toBeGreaterThan(0)
-    expect(productos.length).toBeGreaterThan(0)
-    expect(usuarios.length).toBeGreaterThan(0)
+    expect(clavesActuales.sort()).toEqual(clavesPermitidas.sort())
+  })
+
+  it('No debe sembrar datos de dominio en localStorage', () => {
+    // Los datos de dominio viven en MySQL y se leen desde /api/v1.
+    const clavesProhibidas = [
+      'fortepiano_usuarios',
+      'fortepiano_productos',
+      'fortepiano_categorias',
+      'fortepiano_regiones',
+      'fortepiano_comunas',
+      'fortepiano_roles',
+      'fortepiano_boletas',
+      'fortepiano_blog',
+      'fortepiano_contactos'
+    ]
+
+    clavesProhibidas.forEach((clave) => {
+      expect(localStorage.getItem(clave)).toBeNull()
+    })
   })
 })
-

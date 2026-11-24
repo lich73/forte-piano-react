@@ -34,6 +34,9 @@ export interface Sesion {
   correo: string
   rolId: number
   rolNombre?: string
+  regionId?: number
+  comunaId?: number
+  direccion?: string
 }
 
 export interface ItemCarrito {

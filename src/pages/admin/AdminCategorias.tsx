@@ -35,6 +35,11 @@ export default function AdminCategorias() {
       return
     }
 
+    if (nombreLimpio.length > 100) {
+      setErrorNombre('El nombre no puede superar los 100 caracteres.')
+      return
+    }
+
     const existe = categorias.some(
       (c) => c.nombre.toLowerCase() === nombreLimpio.toLowerCase()
     )
@@ -121,6 +126,7 @@ export default function AdminCategorias() {
                   <Form.Label>Nombre de la Categoría</Form.Label>
                   <Form.Control
                     type="text"
+                    maxLength={100}
                     placeholder="Ej: Sintetizadores y Teclados"
                     value={nombreNueva}
                     onChange={(e) => {

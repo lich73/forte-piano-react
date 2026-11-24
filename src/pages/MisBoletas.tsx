@@ -14,14 +14,15 @@ export default function MisBoletas() {
   const { sesion } = useAuth()
   const { boletas, cargando, error, reintentarPagoBoleta, recargar } = useBoletas({
     soloMias: true,
-    clienteRun: sesion?.run,
+    // El backend filtra por correo cuando no recibe clienteRun. Los correos de
+    // las boletas semilla coinciden con los usuarios, aunque su RUN no.
     correo: sesion?.correo,
-    // Sin sesión no hay RUN/correo con los que filtrar: no se llama a la API.
+    // Sin sesión no hay correo con el que filtrar: no se llama a la API.
     activo: Boolean(sesion)
   })
   const [boletaParaReintento, setBoletaParaReintento] = useState<Boleta | null>(null)
 
-  // El backend filtra /boletas/mis-boletas por los query params clienteRun/correo.
+  // El backend filtra /boletas/mis-boletas por el correo enviado.
   const boletasUsuario = boletas
 
   const verDetalleBoleta = (boleta: Boleta) => {
@@ -68,7 +69,7 @@ export default function MisBoletas() {
 
   const checkoutDesdeBoleta: DatosCheckout | null = boletaParaReintento
     ? {
-        clienteRun: boletaParaReintento.clienteRun || '123456785',
+        clienteRun: sesion?.run || boletaParaReintento.clienteRun || '',
         clienteNombre: boletaParaReintento.clienteNombre,
         clienteApellidos: '',
         clienteCorreo: boletaParaReintento.clienteCorreo,

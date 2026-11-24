@@ -81,9 +81,9 @@ export function useBoletas(opciones: OpcionesBoletas = {}) {
       }
 
       const request: CheckoutRequest = {
-        clienteRun: actual.clienteRun,
+        clienteRun: sesion.run || actual.clienteRun,
         clienteNombre: actual.clienteNombre,
-        clienteCorreo: actual.clienteCorreo,
+        clienteCorreo: sesion.correo || actual.clienteCorreo,
         metodoPago: actual.metodoPago,
         datosEnvio,
         items: actual.items.map((item) => ({ codigo: item.codigo, cantidad: item.cantidad })),

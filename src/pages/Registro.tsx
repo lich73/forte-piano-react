@@ -4,7 +4,7 @@ import { Form, Button } from 'react-bootstrap'
 import { useAuth } from '../context/AuthContext'
 import { useTablasMaestras } from '../hooks/useTablasMaestras'
 import {
-  limpiarRun,
+  runCanonico,
   validarRun,
   obtenerMensajeErrorRun,
   validarCorreo,
@@ -51,7 +51,7 @@ export default function Registro() {
     setTocado((prev) => ({ ...prev, [campo]: true }))
   }
 
-  const runLimpio = limpiarRun(formData.run)
+  const runNormalizado = runCanonico(formData.run)
   const runValido = validarRun(formData.run)
 
   const nombreValido = textoRequerido(formData.nombre, 50)
@@ -60,7 +60,7 @@ export default function Registro() {
   const passwordValido = validarPassword(formData.password)
   const regionValida = formData.regionId !== ''
   const comunaValida = formData.comunaId !== ''
-  const direccionValida = textoRequerido(formData.direccion, 300)
+  const direccionValida = textoRequerido(formData.direccion, 255)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,7 +98,7 @@ export default function Registro() {
 
     setProcesando(true)
     const res = await registro({
-      run: runLimpio,
+      run: runNormalizado,
       nombre: formData.nombre.trim(),
       apellidos: formData.apellidos.trim(),
       correo: formData.correo.trim(),
@@ -291,7 +291,7 @@ export default function Registro() {
                     <Form.Label>Dirección</Form.Label>
                     <Form.Control
                       type="text"
-                      maxLength={300}
+                      maxLength={255}
                       value={formData.direccion}
                       onChange={(e) => handleChange('direccion', e.target.value)}
                       onBlur={() => handleBlur('direccion')}
@@ -299,7 +299,7 @@ export default function Registro() {
                       isInvalid={tocado.direccion && !direccionValida}
                     />
                     <Form.Control.Feedback type="invalid">
-                      La direccion es obligatoria (maximo 300 caracteres).
+                      La direccion es obligatoria (maximo 255 caracteres).
                     </Form.Control.Feedback>
                   </Form.Group>
                 </div>

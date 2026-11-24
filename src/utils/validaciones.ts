@@ -50,6 +50,17 @@ export function formatearRun(run: string): string {
 }
 
 /**
+ * Devuelve el RUN en el formato canónico que usa el backend: sin puntos y con
+ * guión antes del dígito verificador (ej: 123456785 -> 12345678-5).
+ * Los usuarios semilla del backend están guardados con este formato.
+ */
+export function runCanonico(run: string): string {
+  const limpio = limpiarRun(run)
+  if (limpio.length < 2) return limpio
+  return `${limpio.slice(0, -1)}-${limpio.slice(-1)}`
+}
+
+/**
  * Valida un RUN/RUT chileno comprobando que incluya su dígito verificador y que cumpla el algoritmo Módulo 11.
  * - Con puntos o guión: exige guión antes del dígito verificador (ej: 12.345.678-5, 12345678-5, 9.876.543-3).
  * - Sin puntos ni guión: exige 8 dígitos de cuerpo + 1 dígito verificador (9 caracteres, ej: 123456785).

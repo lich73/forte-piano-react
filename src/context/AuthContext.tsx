@@ -26,13 +26,22 @@ export interface DatosActualizacionPerfil {
   direccion: string
 }
 
+export interface ResultadoActualizacionPerfil {
+  exito: boolean
+  /**
+   * true cuando el correo cambió: el JWT anterior queda con el correo viejo
+   * como subject, así que hay que volver a iniciar sesión.
+   */
+  requiereReinicio: boolean
+}
+
 interface AuthContextValue {
   sesion: Sesion | null
   cargando: boolean
   login: (correo: string, password: string) => Promise<LoginResultado>
   registro: (datos: RegistroRequest) => Promise<LoginResultado>
   logout: () => void
-  actualizarPerfil: (datos: DatosActualizacionPerfil) => Promise<boolean>
+  actualizarPerfil: (datos: DatosActualizacionPerfil) => Promise<ResultadoActualizacionPerfil>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -124,13 +133,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => cerrarSesion()
 
-  const actualizarPerfil = async (datos: DatosActualizacionPerfil): Promise<boolean> => {
+  const actualizarPerfil = async (
+    datos: DatosActualizacionPerfil
+  ): Promise<ResultadoActualizacionPerfil> => {
     try {
+      const correoAnterior = sesion?.correo
       const actualizada = await authApi.actualizarPerfil(datos)
+      const cambioCorreo = correoAnterior
+        ? actualizada.correo.toLowerCase() !== correoAnterior.toLowerCase()
+        : false
+
+      if (cambioCorreo) {
+        // El backend no regenera el JWT al cambiar el correo. Cerramos la sesión
+        // para evitar que el token quede apuntando a un correo que ya no existe.
+        cerrarSesion()
+        return { exito: true, requiereReinicio: true }
+      }
+
       aplicarSesion(actualizada)
-      return true
+      return { exito: true, requiereReinicio: false }
     } catch {
-      return false
+      return { exito: false, requiereReinicio: false }
     }
   }
 

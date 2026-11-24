@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Card } from 'react-bootstrap'
 import { Noticia } from '../../types'
+import { rutaImagenNoticia, usarImagenRespaldo } from '../../utils/imagenes'
 
 interface NewsCardProps {
   noticia: Noticia
@@ -8,11 +9,7 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ noticia, mostrarColumna = false }: NewsCardProps) {
-  const rutaImagen = noticia.imagen
-    ? noticia.imagen.startsWith('/')
-      ? noticia.imagen
-      : `/img/${noticia.imagen}`
-    : '/img/logo.png'
+  const rutaImagen = rutaImagenNoticia(noticia.imagen)
 
   const cardContent = (
     <Card as="article" className="h-100 card-forte-hover">
@@ -21,6 +18,7 @@ export function NewsCard({ noticia, mostrarColumna = false }: NewsCardProps) {
           variant="top"
           src={rutaImagen}
           alt={noticia.titulo}
+          onError={usarImagenRespaldo}
           style={{ height: '190px', objectFit: 'cover' }}
         />
       </Link>
