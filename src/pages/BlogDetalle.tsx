@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom'
 import { Container } from 'react-bootstrap'
 import { useNoticias } from '../hooks/useNoticias'
+import { rutaImagenNoticia, usarImagenRespaldo } from '../utils/imagenes'
 
 export default function BlogDetalle() {
   const { slug } = useParams<{ slug: string }>()
@@ -21,11 +22,7 @@ export default function BlogDetalle() {
     )
   }
 
-  const rutaImagenPrincipal = noticia.imagen
-    ? noticia.imagen.startsWith('/')
-      ? noticia.imagen
-      : `/img/${noticia.imagen}`
-    : '/img/logo.png'
+  const rutaImagenPrincipal = rutaImagenNoticia(noticia.imagen)
 
   return (
     <article className="container py-5" style={{ maxWidth: '800px' }}>
@@ -34,6 +31,7 @@ export default function BlogDetalle() {
         src={rutaImagenPrincipal}
         className="img-fluid rounded mb-4 shadow"
         alt={noticia.titulo}
+        onError={usarImagenRespaldo}
         style={{ width: '100%', maxHeight: '420px', objectFit: 'cover' }}
       />
       <p className="text-muted small mb-1">{noticia.fecha}</p>
