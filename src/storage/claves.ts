@@ -1,14 +1,16 @@
+/**
+ * Claves de localStorage permitidas en la aplicación.
+ *
+ * Solo se guardan datos locales del navegador:
+ * - carrito: selección temporal del usuario.
+ * - sesion: datos de la sesión autenticada.
+ * - jwtToken: token que autoriza las llamadas a /api/v1.
+ *
+ * Los datos de dominio (usuarios, productos, categorías, boletas, etc.)
+ * viven exclusivamente en MySQL y se leen desde el backend.
+ */
 export const FORTEPIANO_KEYS = {
-  usuarios: 'fortepiano_usuarios',
-  productos: 'fortepiano_productos',
-  categorias: 'fortepiano_categorias',
-  regiones: 'fortepiano_regiones',
-  comunas: 'fortepiano_comunas',
-  roles: 'fortepiano_roles',
   carrito: 'fortepiano_carrito',
-  contactos: 'fortepiano_contactos',
-  blog: 'fortepiano_blog',
   sesion: 'fortepiano_sesion',
-  boletas: 'fortepiano_boletas',
   jwtToken: 'fortepiano_jwt_token'
 } as const

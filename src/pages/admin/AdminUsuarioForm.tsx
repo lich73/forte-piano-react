@@ -6,6 +6,7 @@ import { useTablasMaestras } from '../../hooks/useTablasMaestras'
 import { Usuario } from '../../types'
 import {
   limpiarRun,
+  runCanonico,
   validarRun,
   obtenerMensajeErrorRun,
   validarCorreo,
@@ -100,7 +101,7 @@ export default function AdminUsuarioForm() {
   const rolValido = Boolean(rolId && rolId !== '')
   const regionValida = Boolean(regionId && regionId !== '')
   const comunaValida = Boolean(comunaId && comunaId !== '')
-  const direccionValida = textoRequerido(direccion, 300)
+  const direccionValida = textoRequerido(direccion, 255)
 
   const handleCambioRegion = (nuevaRegionId: string) => {
     setRegionId(nuevaRegionId)
@@ -154,7 +155,7 @@ export default function AdminUsuarioForm() {
     }
 
     const usuarioGuardar: Usuario = {
-      run: runLimpio,
+      run: runCanonico(run),
       nombre: nombre.trim(),
       apellidos: apellidos.trim(),
       correo: correo.trim(),
@@ -404,7 +405,7 @@ export default function AdminUsuarioForm() {
               <Form.Label>Dirección</Form.Label>
               <Form.Control
                 type="text"
-                maxLength={300}
+                maxLength={255}
                 value={direccion}
                 onChange={(e) => setDireccion(e.target.value)}
                 onBlur={() => setTocado((prev) => ({ ...prev, direccion: true }))}
@@ -412,7 +413,7 @@ export default function AdminUsuarioForm() {
                 isInvalid={tocado.direccion && !direccionValida}
               />
               <Form.Control.Feedback type="invalid">
-                Obligatoria (máximo 300 caracteres).
+                Obligatoria (máximo 255 caracteres).
               </Form.Control.Feedback>
             </Form.Group>
           </Col>

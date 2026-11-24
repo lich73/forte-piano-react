@@ -63,6 +63,7 @@ export default function AdminProductoForm() {
     stock: false,
     stockCritico: false,
     categoriaId: false,
+    imagen: false,
     oferta: false
   })
 
@@ -119,7 +120,7 @@ export default function AdminProductoForm() {
 
   // Validaciones
   const codigoValido =
-    textoRequerido(codigo, null) &&
+    textoRequerido(codigo, 20) &&
     codigo.trim().length >= 3 &&
     !productos.some(
       (p) => p.codigo === codigo.trim() && p.codigo !== codigoParam
@@ -127,6 +128,7 @@ export default function AdminProductoForm() {
 
   const nombreValido = textoRequerido(nombre, 100)
   const descripcionValida = !descripcion || descripcion.trim().length <= 500
+  const imagenValida = !imagen || imagen.trim().length <= 300
   const precioValido = numeroEnRango(precio, 0)
   const stockValido = enteroEnRango(stock, 0)
   const stockCriticoValido = !stockCritico || enteroEnRango(stockCritico, 0)
@@ -158,6 +160,7 @@ export default function AdminProductoForm() {
       stock: true,
       stockCritico: true,
       categoriaId: true,
+      imagen: true,
       oferta: true
     })
 
@@ -165,6 +168,7 @@ export default function AdminProductoForm() {
       !codigoValido ||
       !nombreValido ||
       !descripcionValida ||
+      !imagenValida ||
       !precioValido ||
       !stockValido ||
       !stockCriticoValido ||
@@ -228,6 +232,7 @@ export default function AdminProductoForm() {
               <Form.Label>Código</Form.Label>
               <Form.Control
                 type="text"
+                maxLength={20}
                 placeholder="Ej: NG-009"
                 value={codigo}
                 readOnly={esEdicion}
@@ -237,7 +242,7 @@ export default function AdminProductoForm() {
                 isInvalid={tocado.codigo && !codigoValido}
               />
               <Form.Control.Feedback type="invalid">
-                Código obligatorio, mínimo 3 caracteres y único.
+                Código obligatorio, entre 3 y 20 caracteres, y único.
               </Form.Control.Feedback>
               {!esEdicion && (
                 <Form.Text className="text-muted">
@@ -397,10 +402,17 @@ export default function AdminProductoForm() {
               <Form.Label>Imagen (ruta dentro de static/img o public/img)</Form.Label>
               <Form.Control
                 type="text"
+                maxLength={300}
                 placeholder="productos/mi-instrumento.webp"
                 value={imagen}
                 onChange={(e) => setImagen(e.target.value)}
+                onBlur={() => setTocado((prev) => ({ ...prev, imagen: true }))}
+                isValid={tocado.imagen && imagenValida}
+                isInvalid={tocado.imagen && !imagenValida}
               />
+              <Form.Control.Feedback type="invalid">
+                La ruta de la imagen no puede superar los 300 caracteres.
+              </Form.Control.Feedback>
             </Form.Group>
           </Col>
 

@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { usuariosApi } from '../services/api'
 import type { Usuario } from '../types'
-import { limpiarRun, validarRun } from '../utils/validaciones'
+import { limpiarRun, runCanonico, validarRun } from '../utils/validaciones'
 import { useApiLista } from './useApiLista'
 
 export interface OpcionesUsuarios {
@@ -30,9 +30,10 @@ export function useUsuarios(opciones: OpcionesUsuarios = {}) {
     async (usuario: Usuario): Promise<boolean> => {
       if (!validarRun(usuario.run)) return false
 
-      const runNormalizado = limpiarRun(usuario.run)
+      const runLimpio = limpiarRun(usuario.run)
+      const runNormalizado = runCanonico(usuario.run)
       const usuarioNormalizado = { ...usuario, run: runNormalizado }
-      const existe = usuarios.some((u) => limpiarRun(u.run) === runNormalizado)
+      const existe = usuarios.some((u) => limpiarRun(u.run) === runLimpio)
 
       try {
         const guardado = existe
@@ -40,7 +41,7 @@ export function useUsuarios(opciones: OpcionesUsuarios = {}) {
           : await usuariosApi.crear(usuarioNormalizado)
 
         setDatos((prev) => {
-          const index = prev.findIndex((u) => limpiarRun(u.run) === runNormalizado)
+          const index = prev.findIndex((u) => limpiarRun(u.run) === runLimpio)
           if (index >= 0) {
             const actualizados = [...prev]
             actualizados[index] = guardado
@@ -58,10 +59,11 @@ export function useUsuarios(opciones: OpcionesUsuarios = {}) {
 
   const eliminarUsuario = useCallback(
     async (run: string): Promise<boolean> => {
-      const runNormalizado = limpiarRun(run)
+      const runLimpio = limpiarRun(run)
+      const runNormalizado = runCanonico(run)
       try {
         await usuariosApi.eliminar(runNormalizado)
-        setDatos((prev) => prev.filter((u) => limpiarRun(u.run) !== runNormalizado))
+        setDatos((prev) => prev.filter((u) => limpiarRun(u.run) !== runLimpio))
         return true
       } catch {
         return false

@@ -4,7 +4,6 @@ import { Form, Row, Col, Card, Badge, Button, Alert } from 'react-bootstrap'
 import Swal from 'sweetalert2'
 import { useCart, mostrarModalBoletaEmitida } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
-import { useUsuarios } from '../hooks/useUsuarios'
 import { useTablasMaestras } from '../hooks/useTablasMaestras'
 import { PasarelaPagoModal } from '../components/common/PasarelaPagoModal'
 import {
@@ -14,7 +13,7 @@ import {
   obtenerPorcentajeDescuento
 } from '../utils/formato'
 import {
-  limpiarRun,
+  runCanonico,
   validarRun,
   obtenerMensajeErrorRun,
   validarCorreo,
@@ -32,9 +31,6 @@ export default function Carrito() {
     procesarPagoPasarela
   } = useCart()
   const { sesion, actualizarPerfil } = useAuth()
-  // /usuarios es exclusivo de ADMIN. Los clientes no deben disparar ese GET:
-  // sus datos vienen de /auth/me y se completan con el formulario de perfil.
-  const { obtenerUsuarioPorRun } = useUsuarios({ activo: sesion?.rolId === 1 })
   const {
     regiones,
     obtenerComunasPorRegion,
@@ -71,25 +67,21 @@ export default function Carrito() {
 
   const [tocado, setTocado] = useState<Record<string, boolean>>({})
 
-  // Cargar datos del perfil del usuario autenticado
+  // Cargar datos del perfil del usuario autenticado.
+  // /auth/me no devuelve región, comuna ni dirección: esos datos se completan
+  // en el formulario de perfil y nunca se rellenan con IDs por defecto.
   useEffect(() => {
     if (sesion) {
-      const usuarioDb = obtenerUsuarioPorRun(sesion.run)
-      setClienteRun(usuarioDb?.run || sesion.run)
-      setClienteNombre(usuarioDb?.nombre || sesion.nombre)
-      setClienteApellidos(usuarioDb?.apellidos || sesion.apellidos)
-      setClienteCorreo(usuarioDb?.correo || sesion.correo)
-      setPerfilRegionId(usuarioDb?.regionId ? String(usuarioDb.regionId) : '1')
-      setPerfilComunaId(usuarioDb?.comunaId ? String(usuarioDb.comunaId) : '1')
-      setPerfilDireccion(usuarioDb?.direccion || '')
-      setEnvioDestinatario(
-        `${usuarioDb?.nombre || sesion.nombre} ${usuarioDb?.apellidos || sesion.apellidos}`.trim()
-      )
+      setClienteRun(sesion.run)
+      setClienteNombre(sesion.nombre)
+      setClienteApellidos(sesion.apellidos)
+      setClienteCorreo(sesion.correo)
+      setEnvioDestinatario(`${sesion.nombre} ${sesion.apellidos}`.trim())
       setModalidadEntrega('perfil')
     } else {
       setModalidadEntrega('otra_direccion')
     }
-  }, [sesion, obtenerUsuarioPorRun])
+  }, [sesion])
 
   const comunasPerfilDisponibles = perfilRegionId ? obtenerComunasPorRegion(perfilRegionId) : []
   const comunasEnvioDisponibles = envioRegionId ? obtenerComunasPorRegion(envioRegionId) : []
@@ -101,14 +93,14 @@ export default function Carrito() {
   const correoClienteValido = validarCorreo(clienteCorreo)
   const perfilRegionValida = Boolean(perfilRegionId)
   const perfilComunaValida = Boolean(perfilComunaId)
-  const perfilDireccionValida = textoRequerido(perfilDireccion, 300)
+  const perfilDireccionValida = textoRequerido(perfilDireccion, 255)
 
   // Validaciones de Datos de Despacho según modalidad
   const destinatarioValido = textoRequerido(envioDestinatario, 100)
   const envioRegionValida = modalidadEntrega === 'otra_direccion' ? Boolean(envioRegionId) : true
   const envioComunaValida = modalidadEntrega === 'otra_direccion' ? Boolean(envioComunaId) : true
   const envioDireccionValida =
-    modalidadEntrega === 'otra_direccion' ? textoRequerido(envioDireccion, 300) : true
+    modalidadEntrega === 'otra_direccion' ? textoRequerido(envioDireccion, 255) : true
 
   const handleGuardarCambiosPerfil = async () => {
     setTocado((prev) => ({
@@ -137,7 +129,7 @@ export default function Carrito() {
       return
     }
 
-    const ok = await actualizarPerfil({
+    const resultado = await actualizarPerfil({
       nombre: clienteNombre,
       apellidos: clienteApellidos,
       correo: clienteCorreo,
@@ -146,18 +138,29 @@ export default function Carrito() {
       direccion: perfilDireccion
     })
 
-    if (ok) {
-      setEditandoPerfil(false)
+    if (!resultado.exito) {
+      Swal.fire('Error', 'No se pudo actualizar tu perfil en el servidor.', 'error')
+      return
+    }
+
+    setEditandoPerfil(false)
+
+    if (resultado.requiereReinicio) {
       Swal.fire({
         title: 'Perfil actualizado',
-        text: 'Tus datos personales se actualizaron en tu cuenta.',
-        icon: 'success',
-        timer: 1800,
-        showConfirmButton: false
+        text: 'Tu correo cambió. Por seguridad, inicia sesión nuevamente.',
+        icon: 'success'
       })
-    } else {
-      Swal.fire('Error', 'No se pudo actualizar tu perfil en el servidor.', 'error')
+      return
     }
+
+    Swal.fire({
+      title: 'Perfil actualizado',
+      text: 'Tus datos personales se actualizaron en tu cuenta.',
+      icon: 'success',
+      timer: 1800,
+      showConfirmButton: false
+    })
   }
 
   const handleAbrirPasarelaPago = async () => {
@@ -174,6 +177,15 @@ export default function Carrito() {
       envioComunaId: true,
       envioDireccion: true
     })
+
+    if (!sesion) {
+      Swal.fire(
+        'Inicia sesión para comprar',
+        'Para emitir tu boleta electrónica necesitas ingresar con una cuenta de cliente.',
+        'info'
+      )
+      return
+    }
 
     if (!runClienteValido || !nombreClienteValido || !apellidosClienteValido || !correoClienteValido) {
       Swal.fire(
@@ -243,8 +255,14 @@ export default function Carrito() {
       }
     }
 
-    if (sesion && editandoPerfil) {
-      await actualizarPerfil({
+    if (
+      sesion &&
+      editandoPerfil &&
+      perfilRegionValida &&
+      perfilComunaValida &&
+      perfilDireccionValida
+    ) {
+      const resultadoPerfil = await actualizarPerfil({
         nombre: clienteNombre,
         apellidos: clienteApellidos,
         correo: clienteCorreo,
@@ -252,11 +270,26 @@ export default function Carrito() {
         comunaId: Number(perfilComunaId),
         direccion: perfilDireccion
       })
+
+      if (resultadoPerfil.requiereReinicio) {
+        Swal.fire(
+          'Inicia sesión nuevamente',
+          'Tu correo cambió. Vuelve a iniciar sesión para continuar con el pago.',
+          'info'
+        )
+        return
+      }
+
+      if (!resultadoPerfil.exito) {
+        Swal.fire('Error', 'No se pudo actualizar tu perfil en el servidor.', 'error')
+        return
+      }
+
       setEditandoPerfil(false)
     }
 
     const checkoutData: DatosCheckout = {
-      clienteRun: limpiarRun(clienteRun),
+      clienteRun: runCanonico(clienteRun),
       clienteNombre: clienteNombre.trim(),
       clienteApellidos: clienteApellidos.trim(),
       clienteCorreo: clienteCorreo.trim(),
@@ -476,8 +509,8 @@ export default function Carrito() {
                   </Button>
                 </div>
               ) : (
-                <Badge bg="info" text="dark">
-                  Comprando como invitado
+                <Badge bg="warning" text="dark">
+                  Inicia sesión para comprar
                 </Badge>
               )}
             </Card.Header>
@@ -489,7 +522,15 @@ export default function Carrito() {
                   <Link to="/login" className="text-accent fw-bold">
                     Inicia sesión aquí
                   </Link>{' '}
-                  para cargar tus datos y dirección de perfil automáticamente.
+                  para cargar tus datos personales en la boleta. La compra requiere una cuenta de cliente.
+                </Alert>
+              )}
+
+              {sesion && modalidadEntrega === 'perfil' && !perfilRegionValida && (
+                <Alert variant="warning" className="py-2 small mb-3">
+                  <i className="bi bi-exclamation-triangle me-2"></i>
+                  Para despachar a tu dirección de perfil, haz clic en{' '}
+                  <strong>Editar mis datos personales</strong> y completa región, comuna y dirección.
                 </Alert>
               )}
 
@@ -580,7 +621,7 @@ export default function Carrito() {
                       </Form.Label>
                       <Form.Control
                         type="text"
-                        maxLength={300}
+                        maxLength={255}
                         value={perfilDireccion}
                         readOnly={!editandoPerfil}
                         onChange={(e) => setPerfilDireccion(e.target.value)}
@@ -853,7 +894,7 @@ export default function Carrito() {
                       </Form.Label>
                       <Form.Control
                         type="text"
-                        maxLength={300}
+                        maxLength={255}
                         placeholder="Ej: Av. Las Condes 4560, Depto 802"
                         value={envioDireccion}
                         onChange={(e) => setEnvioDireccion(e.target.value)}

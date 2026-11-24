@@ -1,7 +1,20 @@
 import { Producto } from '../types'
 
 /**
- * Mapeo de prefijos conocidos por ID de categoría en Forte & Piano.
+ * Prefijos para las categorías que siembra el backend actual.
+ * Se resuelven por nombre porque los IDs autoincrementales pueden cambiar.
+ */
+const PREFIJOS_POR_NOMBRE: Record<string, string> = {
+  'pianos acusticos': 'PA',
+  'pianos digitales': 'PD',
+  'sintetizadores': 'SY',
+  'accesorios': 'AD',
+  'amplificadores': 'AM',
+  'partituras': 'PT'
+}
+
+/**
+ * Mapeo legado por ID, usado solo si no se recibe el nombre de la categoría.
  */
 const PREFIJOS_CATEGORIA: Record<number, string> = {
   1: 'GUI', // Guitarras y Bajos
@@ -10,6 +23,14 @@ const PREFIJOS_CATEGORIA: Record<number, string> = {
   4: 'VIE', // Instrumentos de Viento
   5: 'CUE', // Cuerdas y Arcos
   6: 'AUD'  // Audio y Accesorios
+}
+
+function normalizarNombreCategoria(nombre: string): string {
+  return nombre
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 }
 
 /**
@@ -26,11 +47,16 @@ export function generarCodigoPorCategoria(
   productos: Producto[] = []
 ): string {
   const catIdNum = Number(categoriaId)
-  let prefijo = PREFIJOS_CATEGORIA[catIdNum]
+  const nombreNormalizado = normalizarNombreCategoria(nombreCategoria)
+  let prefijo = nombreNormalizado ? PREFIJOS_POR_NOMBRE[nombreNormalizado] : undefined
+
+  if (!prefijo) {
+    prefijo = PREFIJOS_CATEGORIA[catIdNum]
+  }
 
   if (!prefijo) {
     // Si es una categoría personalizada creada dinámicamente, tomamos las 3 primeras letras
-    const palabras = nombreCategoria.trim().split(/\s+/)
+    const palabras = nombreNormalizado.split(/\s+/)
     if (palabras.length > 0 && palabras[0].length >= 3) {
       prefijo = palabras[0].substring(0, 3).toUpperCase()
     } else {
