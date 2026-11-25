@@ -1,11 +1,12 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Form, Row, Col, Button, Card } from 'react-bootstrap'
+import { Form, Row, Col, Button, Card, Spinner } from 'react-bootstrap'
 import Swal from 'sweetalert2'
 import { useProductos } from '../../hooks/useProductos'
 import { useAuth } from '../../context/AuthContext'
 import { useTablasMaestras } from '../../hooks/useTablasMaestras'
 import { Producto } from '../../types'
+import { productosApi } from '../../services/api'
 import {
   textoRequerido,
   numeroEnRango,
@@ -25,13 +26,14 @@ export default function AdminProductoForm() {
   const { categorias } = useTablasMaestras()
 
   const esEdicion = Boolean(codigoParam)
+  const [cargandoProducto, setCargandoProducto] = useState(Boolean(codigoParam))
 
   // Rol vendedor (rolId === 2) no tiene permisos de edición o creación
   useEffect(() => {
     if (sesion && sesion.rolId === 2) {
       Swal.fire({
         title: 'Acceso restringido',
-        text: 'Tu rol no permite crear o editar instrumentos musicales.',
+        text: 'Tu rol no permite crear o editar productos.',
         icon: 'warning',
         confirmButtonText: 'Aceptar'
       }).then(() => {
@@ -69,34 +71,61 @@ export default function AdminProductoForm() {
 
   // Cargar datos si estamos en modo edición
   useEffect(() => {
-    if (codigoParam) {
-      const prod = obtenerProducto(codigoParam)
-      if (prod) {
-        setCodigo(prod.codigo)
-        setNombre(prod.nombre)
-        setDescripcion(prod.descripcion || '')
-        setPrecio(String(prod.precio))
-        setStock(String(prod.stock))
-        setStockCritico(prod.stockCritico != null ? String(prod.stockCritico) : '')
-        setCategoriaId(String(prod.categoriaId))
-        setImagen(prod.imagen || '')
-        setEstado(prod.estado)
-        setEnOferta(Boolean(prod.enOferta))
-        setPorcentajeDescuento(
-          prod.porcentajeDescuento && prod.porcentajeDescuento > 0
-            ? String(prod.porcentajeDescuento)
-            : ''
-        )
-        setPrecioOferta(
-          prod.precioOferta != null && prod.precioOferta > 0
-            ? String(prod.precioOferta)
-            : ''
-        )
-      } else {
-        alertaError('Error', 'El instrumento musical no fue encontrado.').then(() => {
-          navigate('/admin/productos')
-        })
+    if (!codigoParam) {
+      setCargandoProducto(false)
+      return
+    }
+
+    let cancelado = false
+    setCargandoProducto(true)
+
+    const cargarDatos = async () => {
+      try {
+        // Intentar primero con el estado en memoria si ya está listo; de lo contrario consultar directo al backend
+        const prod = obtenerProducto(codigoParam) || (await productosApi.obtener(codigoParam))
+        if (cancelado) return
+
+        if (prod) {
+          setCodigo(prod.codigo)
+          setNombre(prod.nombre)
+          setDescripcion(prod.descripcion || '')
+          setPrecio(String(prod.precio))
+          setStock(String(prod.stock))
+          setStockCritico(prod.stockCritico != null ? String(prod.stockCritico) : '')
+          setCategoriaId(String(prod.categoriaId))
+          setImagen(prod.imagen || '')
+          setEstado(prod.estado)
+          setEnOferta(Boolean(prod.enOferta))
+          setPorcentajeDescuento(
+            prod.porcentajeDescuento && prod.porcentajeDescuento > 0
+              ? String(prod.porcentajeDescuento)
+              : ''
+          )
+          setPrecioOferta(
+            prod.precioOferta != null && prod.precioOferta > 0
+              ? String(prod.precioOferta)
+              : ''
+          )
+        } else {
+          throw new Error('Producto no encontrado')
+        }
+      } catch {
+        if (!cancelado) {
+          alertaError('Error', 'El producto no fue encontrado.').then(() => {
+            navigate('/admin/productos')
+          })
+        }
+      } finally {
+        if (!cancelado) {
+          setCargandoProducto(false)
+        }
       }
+    }
+
+    cargarDatos()
+
+    return () => {
+      cancelado = true
     }
   }, [codigoParam, obtenerProducto, navigate])
 
@@ -194,7 +223,7 @@ export default function AdminProductoForm() {
       precioOferta: enOferta ? Math.round(precioOfertaNum) : null
     }
 
-    const guardado = await guardarProducto(productoGuardar)
+    const guardado = await guardarProducto(productoGuardar, esEdicion)
     if (!guardado) {
       alertaError('Error', 'No se pudo guardar el producto en el servidor.')
       return
@@ -213,10 +242,21 @@ export default function AdminProductoForm() {
     })
   }
 
+  if (cargandoProducto) {
+    return (
+      <div className="d-flex flex-column justify-content-center align-items-center min-vh-50 py-5">
+        <Spinner animation="border" variant="accent" role="status">
+          <span className="visually-hidden">Cargando producto...</span>
+        </Spinner>
+        <p className="text-muted mt-3">Cargando datos del producto...</p>
+      </div>
+    )
+  }
+
   return (
     <div>
       <h1 className="section-title" id="tituloFormularioProducto">
-        {esEdicion ? 'Editar producto' : 'Nuevo instrumento musical'}
+        {esEdicion ? 'Editar producto' : 'Nuevo producto'}
       </h1>
 
       <Form
@@ -403,7 +443,7 @@ export default function AdminProductoForm() {
               <Form.Control
                 type="text"
                 maxLength={300}
-                placeholder="productos/mi-instrumento.webp"
+                placeholder="productos/mi-producto.webp"
                 value={imagen}
                 onChange={(e) => setImagen(e.target.value)}
                 onBlur={() => setTocado((prev) => ({ ...prev, imagen: true }))}
@@ -441,7 +481,7 @@ export default function AdminProductoForm() {
                       Gestión de Oferta y Promoción
                     </h2>
                     <small className="text-muted">
-                      Marca el instrumento en oferta e indica su porcentaje de descuento o precio promocional.
+                      Marca el producto en oferta e indica su porcentaje de descuento o precio promocional.
                     </small>
                   </div>
                   <Form.Check
