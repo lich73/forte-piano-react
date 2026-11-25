@@ -44,9 +44,12 @@ export function useProductos() {
   )
 
   const guardarProducto = useCallback(
-    async (producto: Producto): Promise<Producto | null> => {
+    async (producto: Producto, esEdicion?: boolean): Promise<Producto | null> => {
       try {
-        const existe = productos.some((p) => p.codigo === producto.codigo)
+        const existe =
+          esEdicion !== undefined
+            ? esEdicion
+            : productos.some((p) => p.codigo === producto.codigo)
         const guardado = existe
           ? await productosApi.actualizar(producto.codigo, producto)
           : await productosApi.crear(producto)

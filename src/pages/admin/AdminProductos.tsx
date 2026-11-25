@@ -214,7 +214,7 @@ export default function AdminProductos() {
             className="btn btn-accent"
           >
             <i className="bi bi-plus-lg me-1" />
-            Nuevo instrumento musical
+            Nuevo producto
           </Link>
         )}
       </div>
